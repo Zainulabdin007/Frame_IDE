@@ -1,0 +1,15 @@
+{
+  "id": "qwen-coder-7b-q8",
+  "edition": "professional",
+  "modelName": "Frame Professional",
+  "architecture": "qwen2.5-coder-7b",
+  "modelFamily": "qwen2.5-coder",
+  "parameterCount": "7B",
+  "precision": "8-bit",
+  "quantization": "8-bit",
+  "packageVersion": "1.0.0",
+  "storageSizeGb": 7,
+  "memoryRequirementGb": 10,
+  "compatibleRuntimes": ["stub", "llamacpp", "mlx"],
+  "description": "Example Professional metadata — no weights included."
+}

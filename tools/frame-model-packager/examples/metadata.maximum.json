@@ -1,0 +1,15 @@
+{
+  "id": "qwen-coder-7b-fp16",
+  "edition": "maximum",
+  "modelName": "Frame Maximum",
+  "architecture": "qwen2.5-coder-7b",
+  "modelFamily": "qwen2.5-coder",
+  "parameterCount": "7B",
+  "precision": "fp16",
+  "quantization": "none (fp16)",
+  "packageVersion": "1.0.0",
+  "storageSizeGb": 14,
+  "memoryRequirementGb": 16,
+  "compatibleRuntimes": ["stub", "llamacpp", "mlx"],
+  "description": "Example Maximum metadata — no weights included."
+}

@@ -1,0 +1,15 @@
+{
+  "id": "qwen-coder-7b-q4",
+  "edition": "efficient",
+  "modelName": "Frame Efficient",
+  "architecture": "qwen2.5-coder-7b",
+  "modelFamily": "qwen2.5-coder",
+  "parameterCount": "7B",
+  "precision": "4-bit",
+  "quantization": "4-bit",
+  "packageVersion": "1.0.0",
+  "storageSizeGb": 4,
+  "memoryRequirementGb": 6,
+  "compatibleRuntimes": ["stub", "llamacpp", "mlx"],
+  "description": "Example Efficient metadata — no weights included."
+}

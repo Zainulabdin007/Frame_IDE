@@ -1,0 +1,40 @@
+{
+  "fonts": {
+    "main": "\"Work Sans\", sans-serif",
+    "sans": "\"Inter\", \"General Sans\", ui-sans-serif, system-ui, sans-serif",
+    "mono": "\"JetBrains Mono\", \"IBM Plex Mono\", ui-monospace, monospace",
+    "display": "\"Lora\", \"Tiempos Headline\", Georgia, serif",
+    "brand": "\"Just Another Hand\", cursive",
+    "nav": "\"Uchen\", serif"
+  },
+  "colors": {
+    "lightPurity": "#E0D8EB",
+    "bashfulPancy": "#D8CEE6",
+    "sugarCrystal": "#F9F5FF",
+    "fatTuesday": "#341F37",
+    "nearBlack": "#090909",
+    "black": "#000000",
+    "blackLight": "#181B1A",
+    "almostWhite": "#F7F9FA",
+    "softWhite": "#F0F0F0",
+    "steel": "#828384",
+    "graphite": "#474747",
+    "iron": "#423738",
+    "ash": "#6B6B6B",
+    "signalViolet": "#AF50FF",
+    "lavenderMist": "#E1BDFF",
+    "sunsetOrange": "#E8874A",
+    "sunsetEmber": "#C96A32",
+    "ink": "#1A1A1A",
+    "warmWhite": "#F2F1ED"
+  },
+  "ideThemeMapping": {
+    "editorBackground": "#090909",
+    "sidebarBackground": "#181B1A",
+    "primaryText": "#F7F9FA",
+    "secondaryText": "#828384",
+    "primaryAccent": "#AF50FF",
+    "secondaryAccent": "#E8874A",
+    "lightShell": "#E0D8EB"
+  }
+}

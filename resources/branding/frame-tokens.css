@@ -1,0 +1,42 @@
+/* Frame design tokens — mirrored from the Frame website for IDE reuse */
+:root {
+	/* Fonts */
+	--main-font: "Work Sans", sans-serif;
+	--font-sans: "Inter", "General Sans", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+	--font-display: "Lora", "Tiempos Headline", Georgia, serif;
+	--font-brand: "Just Another Hand", cursive;
+	--font-nav: "Uchen", serif;
+
+	/* Light */
+	--color-light-purity: #e0d8eb;
+	--color-bashful-pancy: #d8cee6;
+	--color-sugar-crystal: #f9f5ff;
+	--color-fat-tuesday: #341f37;
+
+	/* Dark */
+	--color-near-black: #090909;
+	--color-black: #000000;
+	--color-black-light: #181b1a;
+	--color-almost-white: #f7f9fa;
+	--color-soft-white: #f0f0f0;
+
+	/* Neutrals */
+	--color-steel: #828384;
+	--color-graphite: #474747;
+	--color-iron: #423738;
+	--color-ash: #6b6b6b;
+
+	/* Accents */
+	--color-signal-violet: #af50ff;
+	--color-lavender-mist: #e1bdff;
+	--color-sunset-orange: #e8874a;
+	--color-sunset-ember: #c96a32;
+
+	/* Toolbar extras */
+	--color-ink: #1a1a1a;
+	--color-warm-white: #f2f1ed;
+
+	/* Overlays */
+	--nav-bg-color: rgba(51, 50, 72, 0.7);
+}

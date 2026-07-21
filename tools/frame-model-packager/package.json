@@ -1,0 +1,17 @@
+{
+  "name": "frame-model-packager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline developer tooling to create and validate Frame .frame-model packages (no downloads, no weight bundling by default).",
+  "type": "module",
+  "bin": {
+    "frame-model-packager": "./bin/frame-model-packager.mjs"
+  },
+  "scripts": {
+    "build-example": "node ./bin/frame-model-packager.mjs build --metadata ./examples/metadata.efficient.json --out ./examples/out-efficient",
+    "validate-example": "node ./bin/frame-model-packager.mjs validate --package ./examples/out-efficient"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
