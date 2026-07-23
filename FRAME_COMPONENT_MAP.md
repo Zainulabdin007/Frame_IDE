@@ -36,8 +36,10 @@ Workbench layout parts are created in `src/vs/workbench/browser/workbench.ts` (`
 | 3 | [Command registration](#3-command-registration) | `platform/commands`, `platform/keybinding`, `platform/actions` | `CommandsRegistry`, `ICommandService`, `Action2` |
 | 4 | [Side panels](#4-side-panels) | `workbench/browser/parts/{sidebar,panel,auxiliarybar}` | `SidebarPart`, `PanelPart`, `AuxiliaryBarPart` |
 | 5 | [Activity bar](#5-activity-bar) | `workbench/browser/parts/activitybar` | `ActivitybarPart`, `IActivityService` |
-| — | **Frame AI UI** | `workbench/contrib/frameAI/browser` | `FRAME_AI_VIEW_CONTAINER_ID`, `FrameAIViewPane` |
-| — | **Frame Intelligence** | `workbench/contrib/frameAI/{orchestrator,memory,rag,adapters,training,services,common}` | `IFrameIntelligenceService`, orchestrator / memory / RAG / adapters / training |
+| — | **Frame control sidebar** | `workbench/contrib/frameAI/browser` | `FRAME_AI_VIEW_CONTAINER_ID`, `FrameAIViewPane` (models / runtime / adapters / learning / knowledge / plans) |
+| — | **Frame Chat participant** | `workbench/contrib/frameAI/browser/frameChatAgent.ts` | `FrameChatAgent` |
+| — | **Frame LM vendor** | `workbench/contrib/frameAI/browser/frameLanguageModelProvider.ts` | `FrameLanguageModelProvider` (Efficient / Professional / Maximum) |
+| — | **Frame Intelligence** | `workbench/contrib/frameAI/{orchestrator,memory,rag,adapters,training,background,services,common}` | `IFrameIntelligenceService`, orchestrator / memory / RAG / adapters / background |
 
 | 6 | [Explorer](#6-explorer) | `workbench/contrib/files` | `ExplorerView`, `IExplorerService` |
 | 7 | [Terminal](#7-terminal) | `workbench/contrib/terminal` | `ITerminalService`, `ITerminalInstance` |

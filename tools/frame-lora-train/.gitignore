@@ -1,0 +1,13 @@
+.venv-lora/
+.venv-data/
+.hf-cache/
+adapters/
+evals/last_eval.json
+__pycache__/
+*.pyc
+.DS_Store
+data/raw/
+data/processed/
+jobs/
+logs/
+.hf-cache/

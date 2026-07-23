@@ -2,7 +2,8 @@
 
 Isolated local model execution boundary for Frame Intelligence.
 
-**Hard rules:** no model downloads, no weight load in the IDE process, no inference yet, no cloud APIs.
+**Hard rules:** no model downloads, no weight load in the IDE process, no cloud APIs.  
+**Inference:** real GGUF generation via `node-llama-cpp` inside the worker when `modelPath` is set; otherwise stub `MODEL_RUNTIME_NOT_CONNECTED`.
 
 ---
 
@@ -21,7 +22,7 @@ Node child_process.fork
         │
 Frame Model Worker  (tools/frame-model-worker/frameModelWorkerMain.mjs)
         │
-Future: llama.cpp / MLX runtime (inside worker only)
+node-llama-cpp (GGUF + optional LoRA paths, Metal on Apple Silicon)
 ```
 
 ---
@@ -31,9 +32,9 @@ Future: llama.cpp / MLX runtime (inside worker only)
 | Process | Owns | Must not own |
 |---------|------|----------------|
 | **IDE / renderer** | UI, orchestrator, context, trust checks, registry | Weight maps, llama.cpp, MLX, GPU kernels |
-| **Model worker child** | Future native backends, future weight maps | Frame UI / editor state |
+| **Model worker child** | llama.cpp session, GGUF maps, toolRequest loop | Frame UI / editor state |
 
-**Why weights never live in the renderer:** Electron renderer crashes and memory pressure take down the whole window. Native inference libs are unsafe and oversized for that process. Checksums and Ed25519 verification stay in the IDE; loading (when implemented) happens only after the worker receives `initialize` with a user-owned `modelPath`.
+**Why weights never live in the renderer:** Electron renderer crashes and memory pressure take down the whole window. Native inference libs are unsafe and oversized for that process. Checksums and Ed25519 verification stay in the IDE; loading happens only after the worker receives `initialize` with a user-owned `modelPath`.
 
 ---
 

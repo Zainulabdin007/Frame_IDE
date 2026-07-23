@@ -1,46 +1,44 @@
 # Frame AI Architecture
 
-Internal architecture for **Frame Intelligence** — the local-first control plane that will eventually drive Frame’s on-device coding model.
+Internal architecture for **Frame Intelligence** — the local-first stack that drives Frame’s on-device coding model.
 
-**Milestone status:** Interfaces, data models, DI services, and scaffolding only.  
-**Explicitly out of scope:** Qwen, any model weights, cloud APIs, editor-core changes, inference.
+**Milestone status:** Orchestrator, context, RAG, memory, adapters, planning, and **local llama.cpp inference** (via isolated worker) are wired. Conversation lives in **built-in Chat**; the Frame sidebar is **control plane only**.  
+**Still out of scope:** cloud APIs, bundling/downloading model weights, editor-core rewrites.
 
 **Code root:** `vscode/src/vs/workbench/contrib/frameAI/`  
-**Companion docs:** `FRAME_ARCHITECTURE.md`, `FRAME_COMPONENT_MAP.md`, `FRAME_REBRAND.md`, `FRAME_ADAPTER_ARCHITECTURE.md`, `FRAME_ADAPTER_UI.md`, `FRAME_LOCAL_RUNTIME_ARCHITECTURE.md`, `FRAME_RUNTIME_UI.md`, `FRAME_MODEL_MANAGEMENT.md`, `FRAME_HARDWARE_COMPATIBILITY.md`
+**Roadmap:** `FRAME_ROADMAP.md`  
+**Companion docs:** `FRAME_ARCHITECTURE.md`, `FRAME_COMPONENT_MAP.md`, `FRAME_REBRAND.md`, `FRAME_ADAPTER_ARCHITECTURE.md`, `FRAME_ADAPTER_UI.md`, `FRAME_LOCAL_RUNTIME_ARCHITECTURE.md`, `FRAME_RUNTIME_UI.md`, `FRAME_MODEL_MANAGEMENT.md`, `FRAME_HARDWARE_COMPATIBILITY.md`, `FRAME_LLAMA_CPP_RUNTIME.md`
 
 ---
 
 ## 1. Architecture overview
 
-Frame AI is a workbench contribution that sits **beside** the existing IDE shell. It does not fork Monaco or rewrite the editor. The Frame AI sidebar UI talks to a facade service; that facade owns orchestrator, memory, RAG, adapters, and training.
+Frame AI sits **beside** the existing IDE shell. Built-in Chat talks to Frame via `FrameChatAgent`; the Activity Bar **Frame** view configures models, runtime, and adapters.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Frame Workbench (VS Code)                    │
 │  Editor · Explorer · Terminal · SCM · Settings · …              │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-┌───────────────────────────────▼─────────────────────────────────┐
-│              Frame AI UI (browser/frameAIViewPane)               │
-│                    IFrameIntelligenceService                     │
-└───────┬───────────┬───────────┬───────────┬───────────┬─────────┘
-        │           │           │           │           │
-        ▼           ▼           ▼           ▼           ▼
-   Orchestrator   Memory       RAG      Adapters    Training
-        │           │           │           │           │
-        └───────────┴─────┬─────┴───────────┴───────────┘
-                          │
-                          ▼
-              Local Model Runtime (FUTURE)
-                   e.g. Qwen via MLX / llama.cpp
-                   NOT PRESENT IN THIS MILESTONE
+└───────────────┬───────────────────────────────┬─────────────────┘
+                │                               │
+                ▼                               ▼
+   Built-in Chat (FrameChatAgent)     Frame sidebar (control plane)
+                │                      Models · Runtime · Adapters
+                ▼
+         IFrameIntelligenceService
+                │
+   Orchestrator · Memory · RAG · KG · Adapters · Background
+                │
+                ▼
+         Local Model Worker (llama.cpp / GGUF)
 ```
 
 ### Package layout
 
 ```
 frameAI/
-├── browser/          # Sidebar UI (existing)
+├── browser/          # Control sidebar + FrameChatAgent
+├── background/       # Idle Background Intelligence Engine
 ├── common/           # Constants, models, privacy guarantees
 ├── orchestrator/     # Task planning & context assembly
 ├── memory/           # Session / workspace / user memory
@@ -60,8 +58,8 @@ All services register via VS Code DI (`registerSingleton`, `InstantiationType.De
 User
   │
   ▼
-Frame UI  (Frame AI sidebar)
-  │  submitChat / submitTask
+Built-in Chat  (FrameChatAgent)
+  │  submitTask
   ▼
 Orchestrator
   │  plan → memory hints, RAG queries, adapter ids
@@ -73,15 +71,17 @@ Orchestrator
 IFrameInferenceContext  (assembled locally)
   │
   ▼
-Local Model  ←── FUTURE SEAM (runtime: 'none' today)
+Model Worker  (llama.cpp GGUF when modelPath set)
   │
   ▼
-Orchestrator result → UI (status / eventual assistant text)
+Streamed tokens → Chat UI
 ```
 
-**Today:** the orchestrator returns `AwaitingModel` with a human-readable note. No tokens are generated.
+**Today:** Chat → FrameChatAgent → orchestrator → worker. With a GGUF `modelPath`, tokens stream from llama.cpp; without one, the worker returns `MODEL_RUNTIME_NOT_CONNECTED` stub text.
 
-**Tomorrow:** the same `IFrameInferenceContext` is passed to a local runtime; the UI does not need to know which backend produced the text.
+**Always:** the same `IFrameInferenceContext` is passed to the local runtime; the Chat UI does not need to know which backend produced the text.
+
+**Control plane:** Frame sidebar configures models, runtime, and adapters — it does not own chat.
 
 ---
 
@@ -214,30 +214,23 @@ frameAI/runtime/
 
 ---
 
-## 6. How LoRA adapters will eventually work
+## 6. How LoRA adapters work
 
-See `FRAME_ADAPTER_ARCHITECTURE.md` for storage, compatibility, and import/export.
+See `FRAME_ADAPTER_ARCHITECTURE.md` and `tools/frame-lora-train/README.md`.
 
 ```
-Approved preferences / curated examples
+Offline train (tools/frame-lora-train, MLX QLoRA)
         │
         ▼
-Training Manager  (scaffold — no workers yet)
+Fuse + convert to GGUF (or GGUF LoRA)
         │
-        ▼
-Local trainer (FUTURE) → writes real weights under .frame/adapters/<id>/
-        │
-        ▼
-IFrameAdapterService.setAdapterState(id, Active)
-        │
-        ▼
-Context Engine selects language / project / user adapters
-        │
-        ▼
-Local runtime applies LoRA on base model (FUTURE)
+        ├─► runtime.json modelPath (fused base)  — simplest
+        └─► Frame sidebar “Link weight path” / importWeightFile
+                 → .frame/adapters/<id>/<weights>
+                 → worker createContext({ lora }) when format supported
 ```
 
-Until training and runtime exist, `IFrameAdapterService` is a **lifecycle + metadata registry** only (placeholder `LoRA.*` files, no weights).
+Adapters no longer write fake `# Frame LoRA placeholder` weight files. Until a real weight file is linked, the worker runs the base GGUF only.
 
 ---
 

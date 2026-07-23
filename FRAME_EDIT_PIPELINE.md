@@ -2,30 +2,28 @@
 
 Transforms Frame AI from chat-only into a coding assistant that **proposes workspace edits**.
 
-**Hard rules:** no Qwen connection, no weight load, no inference, no cloud APIs. Edit plans are **deterministic stubs** only.
+**Hard rules:** no cloud APIs, no in-IDE model downloads. Edit plans prefer **model-emitted** ` ```frame-edit-plan ` JSON (`parseModelEditPlan`); if missing, heuristic recovery then deterministic **stub** plans. Users review via **Chat Apply** (non-stub) and/or the Frame sidebar **Preview Changes** (`acceptAll` / `rejectAll` / Undo).
 
 ---
 
 ## Pipeline
 
 ```
-Prompt
+Prompt (built-in Chat)
   ↓
 Context Engine
   ↓
-Worker / Runtime (stub stream)
+Worker / llama.cpp (or stub if no GGUF)
   ↓
-Stub Edit Plan          (runtime/frameEditPlan.ts)
+parseModelEditPlan → synthesizeRecoveredEditPlan → buildStubEditPlan
   ↓
-Diff Generator          (previewEditPlan)
+Diff / textEdit preview
   ↓
-Preview Changes UI      (Frame AI panel)
+Chat Apply  and/or  Frame sidebar Preview Changes
   ↓
-Accept / Reject         (all or per-file)
+Workspace Apply (frameWorkspaceEditService)
   ↓
-Workspace Apply         (editing/frameWorkspaceEditService.ts)
-  ↓
-Rollback snapshots      (one-click Undo)
+Rollback snapshots (Undo)
 ```
 
 Nothing is written to disk until the user **Accept**s.

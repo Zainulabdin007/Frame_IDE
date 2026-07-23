@@ -2,28 +2,30 @@
 
 User-facing visibility and configuration for the local AI runtime.
 
-**This milestone does not:** download models, load Qwen, run inference, or call cloud APIs.
+**Conversation** happens in built-in Chat. This UI lives in the **Frame** sidebar (control plane).
+
+Weights load only inside the isolated worker when `modelPath` points at an **existing** user-supplied `.gguf`. Frame never downloads models or calls cloud APIs.
 
 ## Purpose
 
-Show what Frame would use for local inference and let users edit `.frame/config/runtime.json` from the sidebar — without loading weights.
+Show what Frame uses for local inference and let users edit runtime enable / model path, review learning/knowledge/plans/tools, and link LoRA weights.
 
 ## UI structure
 
-Frame AI sidebar:
+Frame sidebar (control plane — no chat composer):
 
 ```
-Welcome
+Welcome + status
+Hardware
+Models (+ enable toggle, model path)
+Runtime stats (worker / model loaded / inference)
 Learning
-Runtime          ← this milestone
-  Summary (active backend / status / model)
-  Privacy
-  Details card
-  Available runtimes
-  Configuration (enable · backend · model path)
-Adapters
-Chat
-Composer
+Knowledge
+Plan Review
+Tool Activity
+Preview Changes
+Background Intelligence
+Adapters (JSON import + Link weight path)
 ```
 
 ### Summary
@@ -32,7 +34,8 @@ Composer
 | --- | --- |
 | Active backend | `llama.cpp` / `MLX` / `Frame Local Stub` |
 | Status | Enabled / Disabled / Unavailable |
-| Model | `~/Models/qwen.gguf` or `None` |
+| Model | `/path/to/qwen.gguf` or `None` |
+| Worker | READY · model loaded · Metal when available |
 
 ### Privacy block
 

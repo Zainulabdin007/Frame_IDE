@@ -1,6 +1,6 @@
 # Frame Model Security & Trust
 
-Offline integrity for user-owned model packages. Frame verifies **local files only** — it never downloads weights, never loads inference, and never executes package contents.
+Offline integrity for user-owned model packages. Frame verifies **local files only** — it never downloads weights and never executes package scripts. Runtime loading of a user-selected GGUF happens only through the isolated model worker after config/trust checks.
 
 ---
 
@@ -14,18 +14,19 @@ User-owned weights (local disk)
         │
         ├─ Read Manifest
         ├─ Verify Checksums (SHA-256 recompute)
-        ├─ Verify Signature metadata
+        ├─ Verify Signature (Ed25519 + local keys)
         ├─ Install (copy into .frame/models/imported/)
         ├─ Register (registry.json + trustStatus)
-        └─ Activate (config only — no weight load)
+        └─ Activate (writes runtime config; may eager-load when enabled + modelPath)
 ```
 
 | Principle | Behavior |
 |-----------|----------|
 | **User ownership** | You supply and keep model weights |
 | **No network** | Import / verify / register never call cloud APIs |
-| **No execution** | Packages are data; Frame does not run scripts or load backends |
+| **No package execution** | Packages are data; Frame does not run scripts from the package |
 | **Integrity first** | Checksums are recomputed from files on disk |
+| **Trust gate** | `INVALID` never loads; `UNVERIFIED` requires `allowUnverifiedModels: true` |
 
 ---
 
@@ -67,9 +68,11 @@ After install, Frame re-runs checksum verification on the copy under `.frame/mod
 | **VERIFIED** | Ed25519 signature matches manifest + checksums |
 | **INVALID** | Bad signature or malformed crypto material |
 | **UNKNOWN_KEY** | `keyId` not present in local key store |
-| **UNSUPPORTED** | Non-Ed25519 algorithm (e.g. rsa-pss-sha256) |
+| **UNSUPPORTED** | Non-Ed25519 algorithm, or sync `verify()` (metadata-only — not crypto proof) |
 
 Full design: **[FRAME_MODEL_SIGNATURES.md](./FRAME_MODEL_SIGNATURES.md)**.
+
+> Sync `signatureService.verify()` must **not** be treated as cryptographic proof. Only `verifyPackageSignature()` verifies digests.
 
 ---
 
@@ -77,29 +80,36 @@ Full design: **[FRAME_MODEL_SIGNATURES.md](./FRAME_MODEL_SIGNATURES.md)**.
 
 Stored on each model in `.frame/models/registry.json`:
 
-| `trustStatus` | UI |
-|---------------|-----|
-| `UNVERIFIED` | ⚠ No signature (or key unavailable) |
-| `CHECKSUM_VALID` | ✓ Checksum verified |
-| `SIGNATURE_VALID` | ✓ Ed25519 verified |
-| `INVALID` | ✗ Integrity failed |
+| `trustStatus` | Load behavior |
+|---------------|---------------|
+| `UNVERIFIED` | Blocked **when package checksum/signature metadata exists**, unless `allowUnverifiedModels: true`. Plain catalog + `modelPath` entries are allowed. |
+| `CHECKSUM_VALID` | Allowed |
+| `SIGNATURE_VALID` | Allowed |
+| `INVALID` | **Always blocked** |
 
-Example:
+Raw `modelPath` / `FRAME_MODEL_PATH` without package trust metadata is allowed (explicit local file ownership).
+
+Example runtime override:
 
 ```json
 {
-  "id": "qwen-coder-7b-q4",
-  "installed": true,
-  "localPath": ".frame/models/imported/qwen-coder-7b-q4",
-  "checksum": "sha256:…",
-  "trustStatus": "SIGNATURE_VALID",
-  "signature": {
-    "algorithm": "ed25519",
-    "keyId": "frame-official-dev",
-    "verifyStatus": "VERIFIED"
-  }
+  "allowUnverifiedModels": true
 }
 ```
+
+---
+
+## Adapter & path safety
+
+- Adapter `weightFile` is **basename-only** under `.frame/adapters/<id>/` — `../` escapes are rejected.
+- Workspace tools reject absolute paths and `..`; reads are size-capped.
+- Model worker refuses non-absolute weight paths and non-`.gguf` / `.safetensors` adapters.
+
+---
+
+## Local data at rest
+
+Frame AI does **not** send prompts to the cloud. It **does** write truncated chat turns and redacted tool/generation diagnostics under `.frame/`. That tree is covered by `.frame/.gitignore` (`*`) so it is not committed by default.
 
 ---
 
@@ -112,10 +122,8 @@ Import
   → Verify Signature (Ed25519 + local keys)
   → Install
   → Register
-  → Activate
+  → Activate (config; eager load when enabled + trusted path)
 ```
-
-Activate updates runtime config (`activeModelId`) only. It does **not** load llama.cpp, MLX, or any model runtime.
 
 ---
 
@@ -125,4 +133,4 @@ Activate updates runtime config (`activeModelId`) only. It does **not** load lla
 - [FRAME_MODEL_PACKAGING.md](./FRAME_MODEL_PACKAGING.md)
 - [FRAME_MODEL_IMPORT.md](./FRAME_MODEL_IMPORT.md)
 - [FRAME_MODEL_INSTALLATION.md](./FRAME_MODEL_INSTALLATION.md)
-- Code: `frameModelKeyStore.ts`, `frameModelEd25519Verifier.ts`, `frameModelSignatureService.ts`
+- Code: `frameModelKeyStore.ts`, `frameModelEd25519Verifier.ts`, `frameModelSignatureService.ts`, `frameRuntimeService.ts`

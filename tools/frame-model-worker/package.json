@@ -1,0 +1,18 @@
+{
+  "name": "frame-model-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated Frame model worker process (llama.cpp via node-llama-cpp).",
+  "main": "frameModelWorkerMain.mjs",
+  "scripts": {
+    "start": "node frameModelWorkerMain.mjs",
+    "smoke": "node smoke-test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "node-llama-cpp": "^3.14.0"
+  }
+}
