@@ -9,7 +9,7 @@
 
 /** Budgets tuned for 7B Q4_K_M (~local laptop latency). */
 const DEFAULT_BUDGET = {
-	systemChars: 6_500,
+	systemChars: 8_000,
 	userChars: 5_500,
 	ragChunkChars: 700,
 	maxRagChunks: 4,
@@ -21,14 +21,19 @@ const DEFAULT_BUDGET = {
 	selectionChars: 2_000,
 };
 
-/** Tools advertised to the model (keeps the system prompt small). */
+/** Model-callable tools executed by the IDE (names + argument keys are the IDE contract). */
 export const FRAME_WORKER_TOOLS = Object.freeze([
 	'readFile',
 	'listFiles',
-	'searchWorkspace',
+	'globFiles',
 	'grepWorkspace',
+	'codebaseSearch',
 	'findSymbol',
 	'findReferences',
+	'findDependencies',
+	'findCallers',
+	'findImplementations',
+	'readLints',
 	'gitStatus',
 	'gitDiff',
 ]);
@@ -39,13 +44,18 @@ export const FRAME_PRIORITY_TOOLS = FRAME_WORKER_TOOLS;
 /** @type {Readonly<Record<string, string>>} */
 const TOOL_ARG_HINTS = Object.freeze({
 	readFile: '{ "path": "<workspace-relative path>", "maxBytes"?: number }',
-	searchWorkspace: '{ "query": "<string>", "limit"?: number }',
-	grepWorkspace: '{ "pattern": "<substring>", "limit"?: number }',
 	listFiles: '{ "path"?: "<dir>", "limit"?: number }',
-	gitStatus: '{}',
-	gitDiff: '{ "path"?: "<path>" }',
+	globFiles: '{ "pattern": "<glob like src/**/*.ts>", "limit"?: number }',
+	grepWorkspace: '{ "pattern": "<regular expression>", "glob"?: "<file filter>", "limit"?: number }',
+	codebaseSearch: '{ "query": "<natural language question about the code>", "limit"?: number }',
 	findSymbol: '{ "name": "<symbol>", "limit"?: number }',
 	findReferences: '{ "name": "<symbol>", "limit"?: number }',
+	findDependencies: '{ "path": "<file>", "limit"?: number }',
+	findCallers: '{ "name": "<function>", "limit"?: number }',
+	findImplementations: '{ "name": "<interface/class>", "limit"?: number }',
+	readLints: '{ "path"?: "<file>", "limit"?: number }',
+	gitStatus: '{ }',
+	gitDiff: '{ "path": "<file>" }',
 });
 
 /**
@@ -67,6 +77,12 @@ export function buildToolCallingInstructions(toolNames = FRAME_WORKER_TOOLS) {
 		'```',
 		'Available tools:',
 		...lines,
+		'When to use which:',
+		'- grepWorkspace for exact strings or regex matches; codebaseSearch for conceptual, natural-language questions about the code.',
+		'- globFiles to locate files by name pattern; listFiles to browse one directory.',
+		'- findSymbol to locate a definition; findReferences for its usages; findCallers for callers of a function; findImplementations for implementations of an interface/class; findDependencies for what a file imports.',
+		'- readLints after making edits to check for new errors.',
+		'- gitStatus / gitDiff to inspect pending changes.',
 		'Rules:',
 		'- Emit at most one ```frame-tool block per reply.',
 		'- Read before editing. Prefer readFile / grepWorkspace / findSymbol.',
@@ -86,7 +102,9 @@ export function buildEditPlanInstructions() {
 		'```frame-edit-plan',
 		'{"summary":"short description","operations":[{"kind":"modify","path":"src/file.ts","newContent":"...full file contents...","reason":"why"}]}',
 		'```',
-		'Operation kinds: create {path,content}, modify {path,newContent}, delete {path}, rename {fromPath,toPath}.',
+		'Operation kinds: create {path,content}, modify {path,newContent}, append {path,content}, prepend {path,content}, insert {path,line,content}, delete {path}, rename {fromPath,toPath}.',
+		'For adding text at the top/bottom of an existing file, ALWAYS use prepend/append with only the new text. Do not repeat the full file.',
+		'For adding a new numbered line, use insert with a 1-based line number.',
 		'For modify/create, put the FULL file contents in content/newContent (not a patch).',
 		'Keep prose brief; the plan is what the IDE applies after the user clicks Apply.',
 	].join('\n');
@@ -160,10 +178,22 @@ export function mapInferenceContext(context, options = {}) {
 		.slice(0, budget.maxSymbols);
 	const history = asArray(ctx.messages).slice(-budget.maxHistoryTurns);
 
-	const systemParts = [
+	// Instruction sections (tool protocol + edit protocol) are computed first and
+	// reserved in full. Only the variable context below may be truncated — earlier
+	// head-truncation of the whole prompt silently dropped these protocols whenever
+	// preferences/notes/symbols/code filled the budget.
+	const identityBlock = [
 		'You are Frame, a fast local coding assistant for this workspace.',
 		'Be concise. Prefer tools + edit plans over long explanations.',
-		'',
+	].join('\n');
+	const instructionParts = [];
+	if (enableTools) {
+		instructionParts.push(buildToolCallingInstructions(options.tools ?? FRAME_WORKER_TOOLS));
+	}
+	instructionParts.push(buildEditPlanInstructions());
+	const instructionBlock = instructionParts.join('\n\n');
+
+	const variableParts = [
 		'Active preferences:',
 		formatMemories(preferences) || '(none)',
 		'',
@@ -178,46 +208,75 @@ export function mapInferenceContext(context, options = {}) {
 	];
 
 	if (adapters.length) {
-		systemParts.push('', 'Active adapters:', formatAdapters(adapters));
+		variableParts.push('', 'Active adapters:', formatAdapters(adapters));
 	}
-
-	if (enableTools) {
-		systemParts.push('', buildToolCallingInstructions(options.tools ?? FRAME_WORKER_TOOLS));
-	}
-	systemParts.push('', buildEditPlanInstructions());
 
 	if (typeof ctx.systemPrompt === 'string' && ctx.systemPrompt.trim()) {
-		systemParts.push('', 'Notes:', truncate(ctx.systemPrompt.trim(), 800));
+		variableParts.push('', 'Notes:', truncate(ctx.systemPrompt.trim(), 800));
 	}
 
-	const userParts = [];
-	if (history.length) {
-		userParts.push('Recent turns:');
+	const systemSeparator = '\n\n';
+	const reservedChars = identityBlock.length + systemSeparator.length
+		+ instructionBlock.length + systemSeparator.length;
+	const variableBudget = Math.max(0, budget.systemChars - reservedChars);
+	const variableBlock = variableBudget > 0
+		? truncate(variableParts.join('\n'), variableBudget).replace(/\n+$/, '')
+		: '';
+	const systemPrompt = [identityBlock, variableBlock, instructionBlock]
+		.filter(Boolean)
+		.join(systemSeparator);
+
+	// Always keep the user request. Older head-truncation dropped it whenever
+	// history + active file filled the budget — instruct models then answer with
+	// generic "how can I assist you?" greetings.
+	const requestBlock = `User request:\n${request}`;
+	const separator = '\n\n';
+	const requestReserve = Math.min(budget.userChars, requestBlock.length + separator.length);
+	const contextBudget = Math.max(0, budget.userChars - requestReserve);
+
+	const contextParts = [];
+	if (history.length && contextBudget > 0) {
+		contextParts.push('Recent turns:');
 		for (const turn of history) {
 			const role = String(turn.role ?? 'user');
 			const content = truncate(String(turn.content ?? ''), 800);
 			if (content) {
-				userParts.push(`[${role}] ${content}`);
+				contextParts.push(`[${role}] ${content}`);
 			}
 		}
-		userParts.push('');
+		contextParts.push('');
 	}
 
-	if (ctx.activeRelativePath) {
-		userParts.push(`Active file: ${ctx.activeRelativePath}`);
+	if (ctx.activeRelativePath && contextBudget > 0) {
+		contextParts.push(`Active file: ${ctx.activeRelativePath}`);
 	}
-	if (ctx.activeFileContent) {
-		userParts.push('Active file contents:', '```', truncate(String(ctx.activeFileContent), budget.activeFileChars), '```', '');
+	if (ctx.activeFileContent && contextBudget > 0) {
+		contextParts.push('Active file contents:', '```', truncate(String(ctx.activeFileContent), budget.activeFileChars), '```', '');
 	}
-	if (ctx.selectedCode) {
-		userParts.push('Selected code:', truncate(String(ctx.selectedCode), budget.selectionChars), '');
+	if (ctx.selectedCode && contextBudget > 0) {
+		contextParts.push('Selected code:', truncate(String(ctx.selectedCode), budget.selectionChars), '');
 	}
 
-	userParts.push('User request:', request);
+	const contextBlock = contextBudget > 0
+		? truncate(contextParts.join('\n'), contextBudget).replace(/\n+$/, '')
+		: '';
+
+	let userPrompt;
+	if (!contextBlock) {
+		userPrompt = truncate(requestBlock, budget.userChars);
+	} else {
+		userPrompt = `${contextBlock}${separator}${requestBlock}`;
+		if (userPrompt.length > budget.userChars) {
+			const room = Math.max(0, budget.userChars - requestBlock.length - separator.length);
+			userPrompt = room > 0
+				? `${truncate(contextBlock, room).replace(/\n+$/, '')}${separator}${requestBlock}`
+				: truncate(requestBlock, budget.userChars);
+		}
+	}
 
 	return {
-		systemPrompt: truncate(systemParts.join('\n'), budget.systemChars),
-		userPrompt: truncate(userParts.join('\n'), budget.userChars),
+		systemPrompt,
+		userPrompt,
 	};
 }
 

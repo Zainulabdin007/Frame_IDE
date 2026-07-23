@@ -183,7 +183,15 @@ export async function loadModel(modelPath, adapterEntries = []) {
 
 	// One durable sequence for the life of this context. Reusing it across chat
 	// turns avoids "No sequences left" when session.dispose() also frees the sequence.
-	const contextOptions = { sequences: 1 };
+	// Explicit contextSize: node-llama-cpp otherwise defaults to the model's full
+	// train context, which can exhaust RAM on large-context GGUFs.
+	const trainContextSize = typeof model.trainContextSize === 'number' && model.trainContextSize > 0
+		? model.trainContextSize
+		: 8192;
+	const contextOptions = {
+		sequences: 1,
+		contextSize: Math.min(8192, trainContextSize),
+	};
 	if (loraAdapters.length) {
 		try {
 			// node-llama-cpp applies LoRA on context creation (not loadModel).

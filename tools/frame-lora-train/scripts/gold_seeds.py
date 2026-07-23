@@ -8,11 +8,29 @@ from typing import Any
 
 SYSTEM = """You are Frame, a local coding assistant inside Frame IDE.
 Be concise. Prefer tools and edit plans over long explanations.
-When you need workspace info, emit one ```frame-tool fence, then wait.
+When you need workspace info, emit at most one ```frame-tool fence per reply, then wait for the result.
+Tools:
+- readFile {path, maxBytes?} — read one file
+- listFiles {path?, limit?} — list a directory
+- globFiles {pattern, limit?} — find files by glob pattern
+- grepWorkspace {pattern, glob?, limit?} — regex search across file contents
+- codebaseSearch {query, limit?} — semantic search for relevant code
+- findSymbol {name, limit?} — locate a symbol definition
+- findReferences {name, limit?} — find references to a symbol
+- findDependencies {path, limit?} — list what a file imports/depends on
+- findCallers {name, limit?} — find call sites of a function
+- findImplementations {name, limit?} — find implementations of an interface or abstract symbol
+- readLints {path?, limit?} — read linter diagnostics
+- gitStatus {} — current git status
+- gitDiff {path} — diff for one file
+Never repeat a tool call with identical arguments. Use tool results; never invent them.
 When changing files, end with one ```frame-edit-plan JSON fence.
-For modify/create operations, put FULL file contents in content/newContent.
-Never dump unrelated documentation. Never invent tool results.
-Operation kinds: create {path,content}, modify {path,newContent}, delete {path}, rename {fromPath,toPath}."""
+Operation kinds: create {path,content}, modify {path,newContent}, append {path,content}, prepend {path,content}, insert {path,line,content}, delete {path}, rename {fromPath,toPath}.
+Edit rules:
+- Add at the end/bottom → append with ONLY the new text. Add at the top/first line → prepend with only the new text; never repeat the full file.
+- "on line N" / numbered-line requests → insert with a 1-based line number.
+- modify/create carry the FULL resulting file in newContent/content.
+- Never dump unrelated documentation."""
 
 
 def _chat(user: str, assistant: str) -> dict[str, Any]:
@@ -57,9 +75,9 @@ def gold_examples() -> list[dict[str, Any]]:
 				'Append "works" to NOTES.md.',
 				[
 					{
-						"kind": "modify",
+						"kind": "append",
 						"path": "NOTES.md",
-						"newContent": notes + "works\n",
+						"content": "works",
 						"reason": "User asked to append a single token; do not rewrite or dump docs.",
 					}
 				],
@@ -77,9 +95,9 @@ def gold_examples() -> list[dict[str, Any]]:
 				'Prepend "done" to the first line of README.md.',
 				[
 					{
-						"kind": "modify",
+						"kind": "prepend",
 						"path": "README.md",
-						"newContent": "done # Frame\n\nLocal-first IDE.\n",
+						"content": "done ",
 						"reason": "Only change the first line; leave the rest intact.",
 					}
 				],
@@ -97,9 +115,9 @@ def gold_examples() -> list[dict[str, Any]]:
 				"Append OK to NOTES.md.",
 				[
 					{
-						"kind": "modify",
+						"kind": "append",
 						"path": "NOTES.md",
-						"newContent": notes + "OK\n",
+						"content": "OK",
 						"reason": "Additive one-line change only.",
 					}
 				],
@@ -262,24 +280,23 @@ def gold_examples() -> list[dict[str, Any]]:
 					+ _tool("readFile", {"path": "docs/guide.md", "maxBytes": 20000}),
 				),
 				(
-					"Tool result for readFile:\n"
+					"The IDE completed readFile. This is the authoritative result:\n"
 					+ json.dumps(
 						{
 							"success": True,
 							"data": {"path": "docs/guide.md", "content": "# Guide\n\nSetup steps.\n", "truncated": False},
 						},
 						indent=2,
-					)
-					+ "\n\nContinue. Emit another frame-tool only if still needed; otherwise finish with frame-edit-plan.",
+					),
 					"Appending `ready`.\n\n"
 					+ _plan(
 						'Append "ready" to docs/guide.md.',
 						[
 							{
-								"kind": "modify",
+								"kind": "append",
 								"path": "docs/guide.md",
-								"newContent": "# Guide\n\nSetup steps.\nready\n",
-								"reason": "Append after reading file.",
+								"content": "ready",
+								"reason": "Additive end-of-file change; no need to rewrite the file.",
 							}
 						],
 					),
@@ -499,10 +516,10 @@ def gold_examples() -> list[dict[str, Any]]:
 				"Create heading in NEW.md.",
 				[
 					{
-						"kind": "modify",
+						"kind": "prepend",
 						"path": "NEW.md",
-						"newContent": "# Title\n",
-						"reason": "File was empty.",
+						"content": "# Title\n",
+						"reason": "First-line request on empty file uses prepend.",
 					}
 				],
 			),
@@ -706,9 +723,9 @@ def gold_examples() -> list[dict[str, Any]]:
 				'Append "bye" to NOTES.md.',
 				[
 					{
-						"kind": "modify",
+						"kind": "append",
 						"path": "NOTES.md",
-						"newContent": "hi\nbye\n",
+						"content": "bye",
 						"reason": "Prefer frame-edit-plan for user-visible apply.",
 					}
 				],
@@ -728,9 +745,9 @@ def gold_examples() -> list[dict[str, Any]]:
 					f'Append "{token}" to NOTES.md.',
 					[
 						{
-							"kind": "modify",
+							"kind": "append",
 							"path": "NOTES.md",
-							"newContent": body + f"{token}\n",
+							"content": token,
 							"reason": "Tiny additive edit.",
 						}
 					],

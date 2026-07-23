@@ -422,6 +422,8 @@ def refresh_status(job_id: str) -> dict[str, Any]:
 		job["updatedAt"] = _utc_now()
 		job["progress"] = 1.0 if has_weights else job.get("progress", 0.0)
 		save_job(job)
+		if has_weights:
+			_publish_to_frame(job)
 	elif job.get("status") == "running":
 		# Best-effort progress from log "Iter N" lines (avoid false positives).
 		log_path = Path(job["logFile"])
@@ -440,7 +442,34 @@ def refresh_status(job_id: str) -> dict[str, Any]:
 					save_job(job)
 			except OSError:
 				pass
+	elif job.get("status") == "succeeded" and not job.get("publishedToFrame"):
+		_publish_to_frame(job)
 	return job
+
+
+def _publish_to_frame(job: dict[str, Any]) -> None:
+	"""Copy finished weights into <workspace>/.frame/adapters/ — no manual drop."""
+	if job.get("publishedToFrame"):
+		return
+	script = Path(__file__).resolve().parent / "publish_adapter_to_frame.py"
+	adapter = Path(job["adapterPath"])
+	if not adapter.is_absolute():
+		adapter = ROOT / adapter
+	workspace = ROOT.parent.parent  # tools/frame-lora-train → Frame_IDE
+	try:
+		subprocess.check_call(
+			[sys.executable, str(script), "--src", str(adapter), "--workspace", str(workspace)],
+			cwd=str(ROOT),
+		)
+		job["publishedToFrame"] = True
+		job["frameAdapterPath"] = str(workspace / ".frame" / "adapters" / "frame-agent-v1")
+		job["updatedAt"] = _utc_now()
+		save_job(job)
+	except Exception as err:  # noqa: BLE001 — best-effort; training still succeeded
+		job["publishError"] = str(err)
+		job["updatedAt"] = _utc_now()
+		save_job(job)
+		print(f"[training_manager] publish to Frame failed: {err}", file=sys.stderr)
 
 
 def schedule_job(job_id: str, when: str) -> dict[str, Any]:

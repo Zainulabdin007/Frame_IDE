@@ -296,7 +296,9 @@ async function handleGenerate(message) {
 			},
 			isCancelled: () => slot.cancelled || shuttingDown,
 			timeoutMs: Number(process.env.FRAME_GENERATE_TIMEOUT_MS) || 180_000,
-			maxTokens: Number(process.env.FRAME_GENERATE_MAX_TOKENS) || 1024,
+			// Full modify/create plans can exceed 1k tokens. Concise append/prepend
+			// ops remain preferred, but the safety fallback must not cut JSON mid-plan.
+			maxTokens: Number(process.env.FRAME_GENERATE_MAX_TOKENS) || 4096,
 			enableTools: message.enableTools !== false && process.env.FRAME_ENABLE_TOOLS !== '0',
 			tools: FRAME_WORKER_TOOLS,
 			maxToolRounds: Math.min(Number(process.env.FRAME_MAX_TOOL_ROUNDS) || 4, 8),

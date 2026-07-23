@@ -13,17 +13,17 @@ source .venv-lora/bin/activate
 pip install -U pip
 pip install -U "mlx-lm[train]"
 
-python scripts/generate_dataset.py
-
-# Symlinks for mlx_lm.lora expected names
-ln -sfn frame_agent_train.jsonl data/processed/train.jsonl
-ln -sfn frame_agent_valid.jsonl data/processed/valid.jsonl
+# Synth → filter mined → merge into train/valid (merge owns train.jsonl)
+python scripts/generate_dataset.py --scale heavy
+python scripts/quality_filter.py data/raw/*.jsonl --out data/raw/filtered_mined.jsonl
+# Raise max-source so diversified synth + protocol tools/inserts survive caps
+python scripts/merge_all_data.py --max-source-rows 55000 --max-total-rows 160000
 
 echo "Starting LoRA train — leave this Mac plugged in."
 python scripts/train_mlx_lora.py \
   --model mlx-community/Qwen2.5-Coder-7B-Instruct-4bit \
   --adapter-path adapters/frame-agent-v1 \
-  --iters 1200 \
+  --iters 100000 \
   --batch-size 1 \
   --num-layers 16 \
   --lora-rank 16 \

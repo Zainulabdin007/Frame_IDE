@@ -1,0 +1,1 @@
+{"sessionId":"d45f1a","runId":"post-fix","hypothesisId":"D","location":"frameModelWorkerMain.mjs:handleInitialize","message":"worker initialize path","data":{"modelId":"qwen-coder-7b-q4","modelPath":"/Users/zain/Frame/models/efficient/qwen2.5-coder-7b-instruct-q4_k_m.gguf","adapterCount":0,"exists":true},"timestamp":1784650404824}

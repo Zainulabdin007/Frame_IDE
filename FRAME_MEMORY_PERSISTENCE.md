@@ -1,4 +1,5 @@
 # Frame Memory Persistence
+hello
 
 Durable local memory for Frame Intelligence. Survives IDE restarts. Never leaves the machine.
 

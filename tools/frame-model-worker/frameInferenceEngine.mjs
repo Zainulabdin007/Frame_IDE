@@ -78,6 +78,31 @@ export function extractFrameToolCall(text, allowedTools = FRAME_WORKER_TOOLS) {
 }
 
 /**
+ * Detect a complete ```frame-tool fence whose body is NOT valid JSON.
+ * extractFrameToolCall returns null for these, which used to make the broken
+ * fence silently become the final answer. Returns the parse error so the
+ * caller can run one corrective round.
+ *
+ * @param {string} text
+ * @returns {{ message: string, raw: string } | null}
+ */
+export function detectFrameToolParseError(text) {
+	const match = FRAME_TOOL_FENCE_RE.exec(text);
+	if (!match) {
+		return null;
+	}
+	try {
+		JSON.parse(match[1].trim());
+		return null;
+	} catch (err) {
+		return {
+			message: err instanceof Error ? err.message : String(err),
+			raw: match[0],
+		};
+	}
+}
+
+/**
  * Strip ```frame-tool fences from text (for cleaner final / visible output).
  * @param {string} text
  * @returns {string}
@@ -94,9 +119,10 @@ export function stripFrameToolFences(text) {
  * Format a tool result for the next prompt turn.
  * @param {string} tool
  * @param {{ success: boolean, data?: unknown, error?: string }} result
+ * @param {string} [originalRequest]
  * @returns {string}
  */
-export function formatToolResultPrompt(tool, result) {
+export function formatToolResultPrompt(tool, result, originalRequest = '') {
 	const payload = result.success
 		? { success: true, data: result.data ?? null }
 		: { success: false, error: result.error ?? 'unknown error' };
@@ -110,11 +136,13 @@ export function formatToolResultPrompt(tool, result) {
 		body = `${body.slice(0, 12_000)}\n…[truncated]`;
 	}
 	return [
-		`Tool result for ${tool}:`,
+		`The IDE completed ${tool}. This is the authoritative result:`,
 		body,
 		'',
-		'Continue answering the user. Emit another ```frame-tool block only if you still need a tool; otherwise give your final answer with no frame-tool block.',
-	].join('\n');
+		originalRequest ? `Original user request:\n${originalRequest}` : '',
+		'Use the result above now. Do not request the same tool with the same arguments again.',
+		'If the user requested a file change, produce the final ```frame-edit-plan``` now. Otherwise answer normally.',
+	].filter(Boolean).join('\n');
 }
 
 /**
@@ -140,7 +168,8 @@ export async function runInference(loaded, inferenceContext, options) {
 	});
 	const system = options.systemPromptOverride?.trim() || systemPrompt;
 	const timeoutMs = options.timeoutMs ?? 180_000;
-	const maxTokens = options.maxTokens ?? 1024;
+	const maxTokens = options.maxTokens ?? 4096;
+	const originalRequest = String(inferenceContext?.request ?? inferenceContext?.userMessage ?? '').trim();
 
 	// Dispose prior chat session but KEEP the context sequence for the next turn.
 	const prev = loaded.session;
@@ -167,6 +196,10 @@ export async function runInference(loaded, inferenceContext, options) {
 	let toolRounds = 0;
 	let nextPrompt = userPrompt;
 	let forcedFinal = false;
+	let invalidToolJsonRetried = false;
+	const completedToolCalls = new Set();
+	/** @type {Map<string, string>} toolKey → error message of the failed attempt */
+	const failedToolCalls = new Map();
 
 	try {
 		while (true) {
@@ -183,12 +216,17 @@ export async function runInference(loaded, inferenceContext, options) {
 				throw new Error(`Generation timeout after ${timeoutMs}ms`);
 			}
 
+			// Keep intermediate "I need to read..." chatter out of the answer.
+			// Only commit visible text from the round that actually finishes.
+			const roundVisibleParts = [];
 			const round = await promptOnce(session, nextPrompt, {
-				onToken: options.onToken,
+				// Tool-capable rounds are buffered because we cannot know whether
+				// their prose is a final answer until generation completes.
+				onToken: enableTools ? () => {} : options.onToken,
 				isCancelled: options.isCancelled,
 				timeoutMs: remainingMs,
 				maxTokens,
-				visibleParts,
+				visibleParts: roundVisibleParts,
 				allowedTools,
 				enableTools,
 			});
@@ -203,7 +241,23 @@ export async function runInference(loaded, inferenceContext, options) {
 			}
 
 			if (!enableTools || !round.toolCall) {
-				const text = visibleParts.join('') || stripFrameToolFences(round.rawText);
+				// A closed ```frame-tool fence with broken JSON parses to no toolCall;
+				// give the model one corrective round instead of shipping the broken fence.
+				const parseError = enableTools ? detectFrameToolParseError(round.rawText) : null;
+				if (parseError && !invalidToolJsonRetried) {
+					invalidToolJsonRetried = true;
+					nextPrompt = [
+						`Your frame-tool block was invalid JSON: ${parseError.message}.`,
+						'Emit exactly one valid ```frame-tool block ({"name":"<tool>","arguments":{...}}) or answer without tools.',
+					].join('\n');
+					continue;
+				}
+				visibleParts.push(...roundVisibleParts);
+				let text = visibleParts.join('') || stripFrameToolFences(round.rawText);
+				if (parseError) {
+					// Retry already used — give up gracefully and hide the broken fence.
+					text = stripFrameToolFences(text);
+				}
 				return {
 					text,
 					status: 'ok',
@@ -230,6 +284,32 @@ export async function runInference(loaded, inferenceContext, options) {
 
 			toolRounds++;
 			const toolCall = round.toolCall;
+			const toolKey = `${toolCall.name}:${stableStringify(toolCall.args)}`;
+			if (completedToolCalls.has(toolKey)) {
+				// Small local models can loop on an identical successful read.
+				// Force a final answer instead of executing/displaying it again.
+				forcedFinal = true;
+				enableTools = false;
+				nextPrompt = [
+					`You already received a successful ${toolCall.name} result for these arguments:`,
+					stableStringify(toolCall.args),
+					'Do not call tools again. Use the result already in this conversation and answer the original user request now.',
+					'For a file change, emit one complete ```frame-edit-plan``` and no progress/status chatter.',
+				].join('\n');
+				continue;
+			}
+			if (failedToolCalls.has(toolKey)) {
+				// Identical failing call — do not re-execute; it will fail the same way.
+				// This corrective prompt consumed a round (toolRounds++ above), so a
+				// stubborn model still terminates at maxToolRounds.
+				nextPrompt = [
+					`You already called ${toolCall.name} with these arguments and it failed:`,
+					stableStringify(toolCall.args),
+					`Error: ${failedToolCalls.get(toolKey)}`,
+					'Repeating the identical call will fail the same way. Try a different tool or different arguments, or answer the user now without tools.',
+				].join('\n');
+				continue;
+			}
 			const toolResult = await options.requestTool(toolCall.name, toolCall.args);
 			if (options.isCancelled?.()) {
 				return {
@@ -239,7 +319,12 @@ export async function runInference(loaded, inferenceContext, options) {
 					toolRounds,
 				};
 			}
-			nextPrompt = formatToolResultPrompt(toolCall.name, toolResult);
+			if (toolResult.success) {
+				completedToolCalls.add(toolKey);
+			} else {
+				failedToolCalls.set(toolKey, toolResult.error ?? 'unknown error');
+			}
+			nextPrompt = formatToolResultPrompt(toolCall.name, toolResult, originalRequest);
 		}
 	} finally {
 		try {
@@ -256,6 +341,17 @@ export async function runInference(loaded, inferenceContext, options) {
 			loaded.session = null;
 		}
 	}
+}
+
+function stableStringify(value) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return JSON.stringify(value);
+	}
+	const sorted = {};
+	for (const key of Object.keys(value).sort()) {
+		sorted[key] = value[key];
+	}
+	return JSON.stringify(sorted);
 }
 
 /**

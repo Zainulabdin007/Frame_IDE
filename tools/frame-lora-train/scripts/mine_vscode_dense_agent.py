@@ -21,8 +21,9 @@ Be concise. Prefer tools and edit plans over long explanations.
 When you need workspace info, emit one ```frame-tool fence, then wait.
 When changing files, end with one ```frame-edit-plan JSON fence.
 For modify/create operations, put FULL file contents in content/newContent.
+For top/bottom additions, use append/prepend {path,content}; never repeat the full file.
 Never dump unrelated documentation. Never invent tool results.
-Operation kinds: create {path,content}, modify {path,newContent}, delete {path}, rename {fromPath,toPath}."""
+Operation kinds: create {path,content}, modify {path,newContent}, append {path,content}, prepend {path,content}, delete {path}, rename {fromPath,toPath}."""
 
 FN_RE = re.compile(
 	r"(?m)^export\s+(?:async\s+)?function\s+([A-Za-z0-9_]+)\s*(?:<[^>]*>)?\s*\([^)]*\)\s*(?::\s*[^{]+)?\{",
@@ -385,7 +386,7 @@ def main() -> None:
 		asst = f"Reading `{rel}`.\n\n" + tool("readFile", {"path": rel, "maxBytes": 20000})
 		if push(chat(rng.choice([f"show me {rel}", f"read {rel}", f"open {rel}"]), asst, f"{args.tag}-read")):
 			break
-		asst = f"Searching the workspace.\n\n" + tool("grep", {"pattern": path.stem, "glob": "*.ts", "maxMatches": 40})
+		asst = f"Searching the workspace.\n\n" + tool("grepWorkspace", {"pattern": path.stem, "limit": 40})
 		if push(chat(rng.choice([f"grep for {path.stem}", f"search codebase for {path.stem}"]), asst, f"{args.tag}-grep")):
 			break
 
