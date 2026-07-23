@@ -1,0 +1,23 @@
+.DS_Store
+**/.DS_Store
+.cursor/debug*.log
+
+# Nested git backup (do not commit)
+.vscode-git-backup/
+
+# Local models / runtime (keep out of git)
+.frame/models/**/*.gguf
+.frame/logs/
+.frame/rag/
+tools/frame-lora-train/data/
+tools/frame-lora-train/.venv*/
+tools/frame-lora-train/adapters/
+tools/frame-lora-train/jobs/
+
+# VS Code / Frame build artifacts (also covered by vscode/.gitignore)
+vscode/node_modules/
+vscode/out/
+vscode/out-*/
+vscode/.build/
+vscode/.eslintcache
+vscode/*.tsbuildinfo

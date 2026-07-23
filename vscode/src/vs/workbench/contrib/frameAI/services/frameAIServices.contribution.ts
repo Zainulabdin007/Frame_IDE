@@ -1,0 +1,115 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Frame. All rights reserved.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * Registers Frame Intelligence DI services.
+ * Inference: runtime registry + stub (no model weights loaded / downloaded).
+ */
+
+import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IFrameOrchestratorService } from '../orchestrator/frameOrchestrator.js';
+import { FrameOrchestratorService } from '../orchestrator/frameOrchestratorService.js';
+import { IFrameMemoryService } from '../memory/frameMemory.js';
+import { FrameMemoryService } from '../memory/frameMemoryService.js';
+import { IFramePersistentMemoryService } from '../memory/persistentMemory.js';
+import { FramePersistentMemoryService } from '../memory/persistentMemoryService.js';
+import { IFrameRagService } from '../rag/frameRag.js';
+import { FrameRagService } from '../rag/frameRagService.js';
+import { IFrameAdapterService } from '../adapters/frameAdapters.js';
+import { FrameAdapterService } from '../adapters/frameAdapterService.js';
+import { IFrameAdapterManagementService } from '../adapters/frameAdapterManagement.js';
+import { FrameAdapterManagementService } from '../adapters/frameAdapterManagementService.js';
+import { IFrameTrainingManager } from '../training/frameTraining.js';
+import { FrameTrainingManager } from '../training/frameTrainingManager.js';
+import { IFrameContextService } from '../context/frameContext.js';
+import { FrameContextService } from '../context/frameContextService.js';
+import { IFrameHardwareService } from '../hardware/frameHardware.js';
+import { FrameHardwareService } from '../hardware/frameHardwareService.js';
+import { IFrameModelCompatibilityService } from '../hardware/frameModelCompatibility.js';
+import { FrameModelCompatibilityService } from '../hardware/frameModelCompatibilityService.js';
+import { IFrameModelService } from '../models/frameModels.js';
+import { FrameModelService } from '../models/frameModelService.js';
+import { IFrameModelInstallerService } from '../models/frameModelInstaller.js';
+import { FrameModelInstallerService } from '../models/frameModelInstallerService.js';
+import { IFrameModelImportService } from '../models/frameModelImport.js';
+import { FrameModelImportService } from '../models/frameModelImportService.js';
+import { IFrameModelVerifierService } from '../models/frameModelVerifier.js';
+import { FrameModelVerifierService } from '../models/frameModelVerifierService.js';
+import { IFrameModelSignatureService } from '../models/frameModelSignature.js';
+import { FrameModelSignatureService } from '../models/frameModelSignatureService.js';
+import { IFrameModelKeyStore } from '../models/frameModelKeyStore.js';
+import { FrameModelKeyStore } from '../models/frameModelKeyStore.js';
+import { IFrameInferenceRuntime } from '../runtime/frameInferenceRuntime.js';
+import { FrameActiveInferenceRuntimeBridge } from '../runtime/frameActiveInferenceRuntimeBridge.js';
+import { IFrameModelWorkerManager } from '../runtime/worker/frameModelWorkerManager.js';
+import { FrameModelWorkerManager } from '../runtime/worker/frameModelWorkerManager.js';
+import { IFrameModelWorkerProcessSpawner, NullFrameModelWorkerProcessSpawner } from '../runtime/worker/frameModelWorkerProcessSpawner.js';
+import { IFrameModelExecutor } from '../runtime/frameModelExecution.js';
+import { FrameLocalModelExecutor } from '../runtime/frameLocalModelExecutor.js';
+import { IFrameRuntimeService } from '../runtime/frameRuntime.js';
+import { FrameRuntimeService } from '../runtime/frameRuntimeService.js';
+import { IFrameChatMemoryService } from '../memory/frameChatMemory.js';
+import { FrameChatMemoryService } from '../memory/frameChatMemoryService.js';
+import { IFrameGenerationLogService } from '../runtime/frameGenerationLog.js';
+import { FrameGenerationLogService } from '../runtime/frameGenerationLogService.js';
+import { IFrameObservationService } from '../preferences/frameObservation.js';
+import { FrameObservationService } from '../preferences/frameObservationService.js';
+import { IFrameGenerationTracker } from '../preferences/frameGenerationTracker.js';
+import { FrameGenerationTrackerService } from '../preferences/frameGenerationTrackerService.js';
+import { IFramePreferenceReviewService } from '../preferences/framePreferenceReview.js';
+import { FramePreferenceReviewService } from '../preferences/framePreferenceReviewService.js';
+import { IFrameWorkspaceEditService } from '../editing/frameWorkspaceEditService.js';
+import { FrameWorkspaceEditService } from '../editing/frameWorkspaceEditService.js';
+import { IFrameToolLogService } from '../runtime/tools/frameToolLog.js';
+import { FrameToolLogService } from '../runtime/tools/frameToolLogService.js';
+import { IFrameToolExecutionService } from '../runtime/tools/frameToolExecutionService.js';
+import { FrameToolExecutionService } from '../runtime/tools/frameToolExecutionService.js';
+import { IFrameTaskExecutionService } from '../planning/frameTaskExecutor.js';
+import { FrameTaskExecutionService } from '../planning/frameTaskExecutor.js';
+import { IFramePlanReviewService } from '../planning/framePlanReviewService.js';
+import { FramePlanReviewService } from '../planning/framePlanReviewService.js';
+import { IFramePlanTemplateService } from '../planning/framePlanTemplateService.js';
+import { FramePlanTemplateService } from '../planning/framePlanTemplateService.js';
+import { IFrameKnowledgeService } from '../knowledge/frameKnowledgeService.js';
+import { FrameKnowledgeService } from '../knowledge/frameKnowledgeService.js';
+import { IFrameBackgroundIntelligence } from '../background/frameBackgroundIntelligence.js';
+import { FrameBackgroundIntelligenceService } from '../background/frameBackgroundIntelligenceService.js';
+import { IFrameIntelligenceService } from './frameIntelligence.js';
+import { FrameIntelligenceService } from './frameIntelligenceService.js';
+
+registerSingleton(IFramePersistentMemoryService, FramePersistentMemoryService, InstantiationType.Delayed);
+registerSingleton(IFrameChatMemoryService, FrameChatMemoryService, InstantiationType.Delayed);
+registerSingleton(IFrameGenerationLogService, FrameGenerationLogService, InstantiationType.Delayed);
+registerSingleton(IFrameToolLogService, FrameToolLogService, InstantiationType.Delayed);
+registerSingleton(IFrameKnowledgeService, FrameKnowledgeService, InstantiationType.Delayed);
+registerSingleton(IFrameToolExecutionService, FrameToolExecutionService, InstantiationType.Delayed);
+registerSingleton(IFrameMemoryService, FrameMemoryService, InstantiationType.Delayed);
+registerSingleton(IFrameObservationService, FrameObservationService, InstantiationType.Delayed);
+registerSingleton(IFramePreferenceReviewService, FramePreferenceReviewService, InstantiationType.Delayed);
+registerSingleton(IFrameGenerationTracker, FrameGenerationTrackerService, InstantiationType.Delayed);
+registerSingleton(IFrameRagService, FrameRagService, InstantiationType.Delayed);
+registerSingleton(IFrameAdapterService, FrameAdapterService, InstantiationType.Delayed);
+registerSingleton(IFrameAdapterManagementService, FrameAdapterManagementService, InstantiationType.Delayed);
+registerSingleton(IFrameTrainingManager, FrameTrainingManager, InstantiationType.Delayed);
+registerSingleton(IFrameContextService, FrameContextService, InstantiationType.Delayed);
+registerSingleton(IFrameHardwareService, FrameHardwareService, InstantiationType.Delayed);
+registerSingleton(IFrameModelCompatibilityService, FrameModelCompatibilityService, InstantiationType.Delayed);
+registerSingleton(IFrameModelService, FrameModelService, InstantiationType.Delayed);
+registerSingleton(IFrameModelWorkerProcessSpawner, NullFrameModelWorkerProcessSpawner, InstantiationType.Delayed);
+registerSingleton(IFrameModelWorkerManager, FrameModelWorkerManager, InstantiationType.Delayed);
+registerSingleton(IFrameModelExecutor, FrameLocalModelExecutor, InstantiationType.Delayed);
+registerSingleton(IFrameRuntimeService, FrameRuntimeService, InstantiationType.Delayed);
+registerSingleton(IFrameModelInstallerService, FrameModelInstallerService, InstantiationType.Delayed);
+registerSingleton(IFrameModelKeyStore, FrameModelKeyStore, InstantiationType.Delayed);
+registerSingleton(IFrameModelSignatureService, FrameModelSignatureService, InstantiationType.Delayed);
+registerSingleton(IFrameModelVerifierService, FrameModelVerifierService, InstantiationType.Delayed);
+registerSingleton(IFrameModelImportService, FrameModelImportService, InstantiationType.Delayed);
+registerSingleton(IFrameInferenceRuntime, FrameActiveInferenceRuntimeBridge, InstantiationType.Delayed);
+registerSingleton(IFrameWorkspaceEditService, FrameWorkspaceEditService, InstantiationType.Delayed);
+registerSingleton(IFramePlanTemplateService, FramePlanTemplateService, InstantiationType.Delayed);
+registerSingleton(IFramePlanReviewService, FramePlanReviewService, InstantiationType.Delayed);
+registerSingleton(IFrameTaskExecutionService, FrameTaskExecutionService, InstantiationType.Delayed);
+registerSingleton(IFrameOrchestratorService, FrameOrchestratorService, InstantiationType.Delayed);
+registerSingleton(IFrameBackgroundIntelligence, FrameBackgroundIntelligenceService, InstantiationType.Eager);
+registerSingleton(IFrameIntelligenceService, FrameIntelligenceService, InstantiationType.Delayed);

@@ -1,0 +1,1763 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Frame. All rights reserved.
+ *--------------------------------------------------------------------------------------------*/
+
+.monaco-workbench .frame-ai-view {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	color: var(--vscode-sideBar-foreground);
+	background: var(--vscode-sideBar-background);
+}
+
+.monaco-workbench .frame-ai-welcome {
+	flex: 0 0 auto;
+	padding: 12px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-welcome-title {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-welcome-subtitle {
+	margin: 4px 0 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-learning {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-learning-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-learning-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-learning-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-learning-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-learning-empty {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-preference-card {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-preference-eyebrow {
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--vscode-descriptionForeground);
+	margin-bottom: 4px;
+}
+
+.monaco-workbench .frame-ai-preference-text {
+	font-size: 13px;
+	line-height: 1.4;
+	font-weight: 500;
+	margin-bottom: 6px;
+}
+
+.monaco-workbench .frame-ai-preference-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-preference-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-runtime {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-runtime-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-runtime-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-runtime-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-runtime-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.monaco-workbench .frame-ai-runtime-summary,
+.monaco-workbench .frame-ai-runtime-privacy,
+.monaco-workbench .frame-ai-runtime-card,
+.monaco-workbench .frame-ai-runtime-backends,
+.monaco-workbench .frame-ai-runtime-worker {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-runtime-summary-row {
+	font-size: 12px;
+	color: var(--vscode-foreground);
+	margin-bottom: 2px;
+}
+
+.monaco-workbench .frame-ai-runtime-privacy-title,
+.monaco-workbench .frame-ai-runtime-card-title,
+.monaco-workbench .frame-ai-runtime-backends-title,
+.monaco-workbench .frame-ai-runtime-worker-title,
+.monaco-workbench .frame-ai-runtime-memory-title {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: var(--vscode-foreground);
+	margin-bottom: 4px;
+}
+
+.monaco-workbench .frame-ai-runtime-card-note {
+	margin-top: 4px;
+	font-family: var(--monaco-monospace-font, monospace);
+	font-size: 10px;
+}
+
+.monaco-workbench .frame-ai-runtime-worker-note {
+	margin-top: 4px;
+	opacity: 0.9;
+	font-size: 11px;
+}
+
+.monaco-workbench .frame-ai-runtime-worker-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.monaco-workbench .frame-ai-runtime-backend-row {
+	margin-bottom: 4px;
+}
+
+.monaco-workbench .frame-ai-runtime-backend-meta {
+	opacity: 0.9;
+}
+
+.monaco-workbench .frame-ai-runtime-config {
+	padding: 8px 10px;
+	border: 1px dashed var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+}
+
+.monaco-workbench .frame-ai-runtime-config-label {
+	font-size: 11px;
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-runtime-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+	flex-wrap: wrap;
+}
+
+.monaco-workbench .frame-ai-runtime-row.stack {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.monaco-workbench .frame-ai-runtime-row-label {
+	flex: 0 0 auto;
+	min-width: 72px;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-runtime-select {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 26px;
+	font-size: 12px;
+	color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
+	background: var(--vscode-dropdown-background, var(--vscode-input-background));
+	border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border, transparent));
+	border-radius: 2px;
+}
+
+.monaco-workbench .frame-ai-runtime-model-input {
+	width: 100%;
+	box-sizing: border-box;
+	height: 26px;
+	padding: 0 8px;
+	font-family: var(--monaco-monospace-font, monospace);
+	font-size: 11px;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 2px;
+	outline: none;
+}
+
+.monaco-workbench .frame-ai-runtime-model-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .frame-ai-runtime-model-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-tools {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-knowledge {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-knowledge-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-knowledge-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-knowledge-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-knowledge-body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-knowledge-row,
+.monaco-workbench .frame-ai-knowledge-error {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-knowledge-error {
+	color: var(--vscode-errorForeground);
+}
+
+.monaco-workbench .frame-ai-knowledge-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-tools-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-tools-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-tools-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-tools-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-tools-current-title,
+.monaco-workbench .frame-ai-tools-recent-title {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-tools-row,
+.monaco-workbench .frame-ai-tools-empty {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-tools-empty {
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-tools-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-tool-call {
+	padding: 6px 8px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-tool-call-name {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.monaco-workbench .frame-ai-tool-call-meta,
+.monaco-workbench .frame-ai-tool-call-error {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-tool-call-error {
+	color: var(--vscode-errorForeground, var(--vscode-descriptionForeground));
+}
+
+.monaco-workbench .frame-ai-plan-templates {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-plan-templates-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-templates-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-plan-templates-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-templates-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-templates-empty,
+.monaco-workbench .frame-ai-plan-templates-group-title,
+.monaco-workbench .frame-ai-plan-templates-suggested-text {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-templates-group-title {
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	margin-top: 4px;
+}
+
+.monaco-workbench .frame-ai-plan-templates-suggested-text {
+	color: var(--vscode-foreground);
+	font-weight: 500;
+	font-size: 12px;
+	margin-bottom: 6px;
+}
+
+.monaco-workbench .frame-ai-plan-templates-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-plan-template-card {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-plan-template-name {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.monaco-workbench .frame-ai-plan-template-desc,
+.monaco-workbench .frame-ai-plan-template-meta {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+	margin-top: 2px;
+}
+
+.monaco-workbench .frame-ai-plan-review {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-plan-review-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-review-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-plan-review-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-review-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-review-empty,
+.monaco-workbench .frame-ai-plan-review-summary,
+.monaco-workbench .frame-ai-plan-review-meta {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-review-summary {
+	color: var(--vscode-foreground);
+	font-weight: 500;
+}
+
+.monaco-workbench .frame-ai-plan-review-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-review-step {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+	cursor: grab;
+}
+
+.monaco-workbench .frame-ai-plan-review-step.dragging {
+	opacity: 0.6;
+}
+
+.monaco-workbench .frame-ai-plan-review-step.drag-over {
+	outline: 1px dashed var(--vscode-focusBorder, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-plan-review-step-top {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-plan-review-check {
+	flex: 0 0 auto;
+}
+
+.monaco-workbench .frame-ai-plan-review-title-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 4px 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 4px;
+}
+
+.monaco-workbench .frame-ai-plan-review-kind {
+	margin-top: 4px;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-review-notes {
+	margin-top: 6px;
+	width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+	min-height: 40px;
+	padding: 6px 8px;
+	font-family: inherit;
+	font-size: 11px;
+	line-height: 1.35;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 4px;
+}
+
+.monaco-workbench .frame-ai-plan-review-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-timeline {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-timeline-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-timeline-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-timeline-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-timeline-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-timeline-empty,
+.monaco-workbench .frame-ai-timeline-phase,
+.monaco-workbench .frame-ai-timeline-elapsed,
+.monaco-workbench .frame-ai-timeline-step {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.monaco-workbench .frame-ai-timeline-empty {
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-timeline-phase {
+	font-weight: 600;
+}
+
+.monaco-workbench .frame-ai-timeline-elapsed,
+.monaco-workbench .frame-ai-timeline-section-title {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-timeline-section-title {
+	margin-top: 4px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.monaco-workbench .frame-ai-timeline-step.running {
+	color: var(--vscode-foreground);
+	font-weight: 500;
+}
+
+.monaco-workbench .frame-ai-timeline-step.done {
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-timeline-step.pending {
+	opacity: 0.75;
+}
+
+.monaco-workbench .frame-ai-timeline-step.failed {
+	color: var(--vscode-errorForeground, var(--vscode-descriptionForeground));
+}
+
+.monaco-workbench .frame-ai-models {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-models-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-models-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-models-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-model-import-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-models-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-models-summary {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.monaco-workbench .frame-ai-hardware-card {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+	font-size: 12px;
+	line-height: 1.4;
+	margin-bottom: 2px;
+}
+
+.monaco-workbench .frame-ai-hardware-title {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	margin-bottom: 4px;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-recommend-card {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.monaco-workbench .frame-ai-recommend-title {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	margin-bottom: 4px;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-recommend-name {
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.monaco-workbench .frame-ai-recommend-hw {
+	margin-top: 4px;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-model-card.recommended {
+	border-color: var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-model-status {
+	font-weight: 500;
+}
+
+.monaco-workbench .frame-ai-model-checksum {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	word-break: break-all;
+}
+
+.monaco-workbench .frame-ai-model-trust {
+	font-weight: 500;
+	margin-top: 2px;
+}
+
+.monaco-workbench .frame-ai-model-trust.ok {
+	color: var(--vscode-testing-iconPassed, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-model-trust.warn {
+	color: var(--vscode-editorWarning-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-model-trust.bad {
+	color: var(--vscode-errorForeground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-model-installing {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	align-self: center;
+}
+
+.monaco-workbench .frame-ai-model-flag {
+	font-weight: 500;
+}
+
+.monaco-workbench .frame-ai-model-flag.ok {
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-models-empty {
+	margin: 0;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-model-group-title {
+	margin: 0 0 6px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--vscode-descriptionForeground);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.monaco-workbench .frame-ai-model-card {
+	padding: 8px 10px;
+	margin-bottom: 6px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-model-card.active {
+	border-color: var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-model-name {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+.monaco-workbench .frame-ai-model-edition {
+	font-size: 11px;
+	margin: 2px 0 6px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-model-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-model-active-badge {
+	font-weight: 600;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-model-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-adapters {
+	/* Must not create its own scrollport — the control panel scrolls as one. */
+	flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 12px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-adapters-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-adapters-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-adapters-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-drop {
+	margin-bottom: 10px;
+	padding: 10px;
+	border: 1px dashed var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
+	border-radius: 6px;
+	background: var(--vscode-input-background);
+}
+
+.monaco-workbench .frame-ai-adapter-drop.drag-over {
+	border-color: var(--vscode-focusBorder);
+	background: var(--vscode-list-hoverBackground, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-adapter-drop-title {
+	font-size: 11px;
+	font-weight: 600;
+	margin-bottom: 4px;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-adapter-drop-hint {
+	margin: 0 0 8px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-drop-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-adapter-import {
+	margin-bottom: 10px;
+	padding: 8px 10px;
+	border: 1px dashed var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+}
+
+.monaco-workbench .frame-ai-adapter-import-label {
+	font-size: 11px;
+	font-weight: 600;
+	margin-bottom: 6px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-import-input {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 48px;
+	resize: vertical;
+	padding: 6px 8px;
+	font-family: var(--monaco-monospace-font, monospace);
+	font-size: 11px;
+	line-height: 1.35;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 4px;
+	outline: none;
+	margin-bottom: 6px;
+}
+
+.monaco-workbench .frame-ai-adapter-import-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .frame-ai-adapter-import-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-adapters-body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow: visible;
+	max-height: none;
+}
+
+.monaco-workbench .frame-ai-adapters-empty {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-group-title {
+	margin: 0 0 6px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--vscode-descriptionForeground);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.monaco-workbench .frame-ai-adapter-group-empty {
+	margin: 0 0 4px;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-adapter-card {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-adapter-card.active {
+	border-color: var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-adapter-card.builtin {
+	border-color: var(--vscode-charts-blue, var(--vscode-focusBorder, var(--vscode-widget-border, transparent)));
+}
+
+.monaco-workbench .frame-ai-adapter-name {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+.monaco-workbench .frame-ai-adapter-scope {
+	font-size: 11px;
+	margin: 2px 0 6px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+	margin-bottom: 4px;
+}
+
+.monaco-workbench .frame-ai-adapter-path {
+	font-size: 10px;
+	font-family: var(--monaco-monospace-font, monospace);
+	color: var(--vscode-descriptionForeground);
+	margin-bottom: 8px;
+	opacity: 0.9;
+	word-break: break-all;
+}
+
+.monaco-workbench .frame-ai-adapter-imported-badge {
+	font-weight: 600;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-adapter-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-adapter-details {
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px dashed var(--vscode-widget-border, transparent);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-adapter-details-loading {
+	margin: 0;
+}
+
+.monaco-workbench .frame-ai-edits {
+		flex: 0 0 auto;
+	flex-shrink: 0;
+	max-height: none;
+	min-height: min-content;
+	overflow: visible;
+	padding: 10px 14px 8px;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-edits-header {
+	margin-bottom: 8px;
+}
+
+.monaco-workbench .frame-ai-edits-title {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.monaco-workbench .frame-ai-edits-hint {
+	margin: 3px 0 0;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-edits-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-edits-empty,
+.monaco-workbench .frame-ai-edits-summary,
+.monaco-workbench .frame-ai-edits-stats {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-edits-summary {
+	color: var(--vscode-foreground);
+	font-weight: 500;
+}
+
+.monaco-workbench .frame-ai-edits-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.monaco-workbench .frame-ai-edit-file {
+	padding: 8px 10px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 6px;
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-edit-file-path {
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.4;
+	word-break: break-all;
+}
+
+.monaco-workbench .frame-ai-edit-file-meta {
+	margin-top: 2px;
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-edit-file-preview {
+	margin: 6px 0 0;
+	padding: 6px 8px;
+	max-height: none;
+	overflow: visible;
+	font-size: 11px;
+	line-height: 1.35;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: var(--vscode-editor-foreground);
+	background: var(--vscode-textCodeBlock-background, transparent);
+	border-radius: 4px;
+}
+
+.monaco-workbench .frame-ai-edit-file-actions,
+.monaco-workbench .frame-ai-edits-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.monaco-workbench .frame-ai-messages {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: visible;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.monaco-workbench .frame-ai-message {
+	max-width: 100%;
+	padding: 8px 10px;
+	border-radius: 6px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	background: var(--vscode-editorWidget-background, var(--vscode-input-background));
+}
+
+.monaco-workbench .frame-ai-message.role-user {
+	align-self: flex-end;
+	background: var(--vscode-button-secondaryBackground, var(--vscode-input-background));
+	color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+	border-color: transparent;
+}
+
+.monaco-workbench .frame-ai-message.role-assistant {
+	align-self: stretch;
+}
+
+.monaco-workbench .frame-ai-message.role-system {
+	align-self: stretch;
+	opacity: 0.9;
+	background: transparent;
+	border-style: dashed;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-message-role {
+	font-size: 11px;
+	font-weight: 600;
+	margin-bottom: 4px;
+	color: var(--vscode-descriptionForeground);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.monaco-workbench .frame-ai-message.role-user .frame-ai-message-role {
+	color: inherit;
+	opacity: 0.8;
+}
+
+.monaco-workbench .frame-ai-message-body {
+	font-size: 13px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+.monaco-workbench .frame-ai-generation-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.monaco-workbench .frame-ai-gen-action {
+	appearance: none;
+	border: 1px solid var(--vscode-button-border, transparent);
+	background: var(--vscode-button-background);
+	color: var(--vscode-button-foreground);
+	font-size: 12px;
+	font-weight: 500;
+	padding: 5px 12px;
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.monaco-workbench .frame-ai-gen-action:hover {
+	background: var(--vscode-button-hoverBackground, var(--vscode-button-background));
+}
+
+.monaco-workbench .frame-ai-gen-action.secondary {
+	background: transparent;
+	color: var(--vscode-foreground);
+	border-color: var(--vscode-widget-border, var(--vscode-input-border, transparent));
+	font-weight: 400;
+}
+
+.monaco-workbench .frame-ai-gen-action.secondary:hover {
+	background: var(--vscode-list-hoverBackground, transparent);
+}
+
+.monaco-workbench .frame-ai-gen-action:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.monaco-workbench .frame-ai-composer {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	padding: 10px 12px 12px;
+	border-top: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+	background: var(--vscode-sideBar-background);
+}
+
+.monaco-workbench .frame-ai-input-wrap {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.monaco-workbench .frame-ai-input {
+	width: 100%;
+	min-height: 44px;
+	max-height: 120px;
+	resize: none;
+	box-sizing: border-box;
+	padding: 8px 10px;
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, transparent);
+	border-radius: 4px;
+	outline: none;
+}
+
+.monaco-workbench .frame-ai-input::placeholder {
+	color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+}
+
+.monaco-workbench .frame-ai-input:focus {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .frame-ai-send {
+	flex: 0 0 auto;
+	height: 28px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	border: none;
+	border-radius: 2px;
+	color: var(--vscode-button-foreground);
+	background: var(--vscode-button-background);
+}
+
+.monaco-workbench .frame-ai-send:hover {
+	background: var(--vscode-button-hoverBackground);
+}
+
+.monaco-workbench .frame-ai-send:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: 1px;
+}
+
+.monaco-workbench .frame-ai-view.narrow .frame-ai-composer {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.monaco-workbench .frame-ai-view.narrow .frame-ai-send {
+	width: 100%;
+	height: 30px;
+}
+
+/* ---- Control panel (sidebar; chat is on the right) ---- */
+
+.monaco-workbench .frame-ai-view.frame-ai-control {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto;
+	height: 100%;
+	width: 100%;
+	min-height: 0;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control > .frame-ai-control-sticky {
+	flex: 0 0 auto;
+	background: var(--vscode-sideBar-background);
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control > .frame-ai-control-sticky .frame-ai-welcome {
+	border-bottom: none;
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control > .frame-ai-control-sticky .frame-ai-control-status {
+	border-bottom: none;
+}
+
+/* The only scrollport — fills leftover height under the sticky header */
+.monaco-workbench .frame-ai-view.frame-ai-control > .frame-ai-control-scroll {
+	flex: 1 1 auto;
+	min-height: 0;
+	width: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	box-sizing: border-box;
+	padding-bottom: 48px; /* room so last section isn't flush against the edge */
+}
+
+/*
+ * Sections grow with content — never create nested scrollports.
+ */
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-section,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-learning,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-runtime,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-tools,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-knowledge,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-plan-templates,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-plan-review,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-timeline,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-models,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapters,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-edits,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-training,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-hardware,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-stats,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-background,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapters-body,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapter-list,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapter-group,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-models-body,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-section-body,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-edit-file-preview,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapter-import-input,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-plan-review-notes,
+.monaco-workbench .frame-ai-view.frame-ai-control textarea,
+.monaco-workbench .frame-ai-view.frame-ai-control pre {
+	flex: none !important;
+	max-height: none !important;
+	height: auto !important;
+	overflow: visible !important;
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-adapter-import-input,
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-plan-review-notes,
+.monaco-workbench .frame-ai-view.frame-ai-control textarea {
+	resize: vertical;
+}
+
+.monaco-workbench .frame-ai-control-status {
+	margin: 0;
+	padding: 4px 14px 8px;
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+	min-height: 1.4em;
+}
+
+.monaco-workbench .frame-ai-section {
+	flex: 0 0 auto;
+	padding: 0;
+	border-bottom: 1px solid var(--vscode-sideBarSectionHeader-border, var(--vscode-widget-border, transparent));
+}
+
+.monaco-workbench .frame-ai-section-header {
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 8px 14px;
+	text-align: left;
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.monaco-workbench .frame-ai-section-header:hover {
+	background: var(--vscode-list-hoverBackground, transparent);
+}
+
+.monaco-workbench .frame-ai-section-header:focus-visible {
+	outline: 1px solid var(--vscode-focusBorder);
+	outline-offset: -1px;
+}
+
+.monaco-workbench .frame-ai-section-title-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.monaco-workbench .frame-ai-section-chevron {
+	flex: 0 0 auto;
+	width: 0;
+	height: 0;
+	border-left: 4px solid transparent;
+	border-right: 4px solid transparent;
+	border-top: 5px solid var(--vscode-descriptionForeground);
+	transition: transform 0.12s ease;
+	transform: rotate(0deg);
+	margin-top: 1px;
+}
+
+.monaco-workbench .frame-ai-section.is-collapsed .frame-ai-section-chevron {
+	transform: rotate(-90deg);
+}
+
+.monaco-workbench .frame-ai-section-title {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+	line-height: 1.3;
+}
+
+.monaco-workbench .frame-ai-section.frame-ai-models .frame-ai-section-title {
+	color: var(--vscode-button-background, var(--vscode-focusBorder));
+	letter-spacing: 0.05em;
+}
+
+.monaco-workbench .frame-ai-section-hint {
+	display: block;
+	margin: 3px 0 0 14px;
+	font-size: 11px;
+	line-height: 1.35;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-section.is-collapsed .frame-ai-section-hint {
+	display: none;
+}
+
+.monaco-workbench .frame-ai-section.is-collapsed > .frame-ai-section-body {
+	display: none !important;
+}
+
+.monaco-workbench .frame-ai-section-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 0 14px 12px;
+}
+
+.monaco-workbench .frame-ai-stat-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.monaco-workbench .frame-ai-stat-label {
+	color: var(--vscode-descriptionForeground);
+	flex: 0 1 auto;
+}
+
+.monaco-workbench .frame-ai-stat-value {
+	text-align: right;
+	flex: 1 1 auto;
+	word-break: break-word;
+}
+
+.monaco-workbench .frame-ai-model-card,
+.monaco-workbench .frame-ai-model-picker {
+	padding: 8px 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	border-top: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.monaco-workbench .frame-ai-model-card.frame-ai-model-primary,
+.monaco-workbench .frame-ai-runtime-config.frame-ai-model-primary {
+	padding: 10px;
+	border: 1px solid var(--vscode-focusBorder, var(--vscode-button-background));
+	border-radius: 6px;
+	background: var(--vscode-inputOption-activeBackground, var(--vscode-list-hoverBackground));
+	border-top: 1px solid var(--vscode-focusBorder, var(--vscode-button-background));
+}
+
+.monaco-workbench .frame-ai-model-card-title {
+	font-size: 11px;
+	font-weight: 600;
+	margin-bottom: 4px;
+	color: var(--vscode-descriptionForeground);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.monaco-workbench .frame-ai-model-name {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.monaco-workbench .frame-ai-model-meta,
+.monaco-workbench .frame-ai-model-path {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	margin-top: 2px;
+	word-break: break-all;
+}
+
+.monaco-workbench .frame-ai-model-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 0;
+	border-top: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.monaco-workbench .frame-ai-empty {
+	margin: 0;
+	font-size: 12px;
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-plan-review-countdown {
+	margin: 0;
+	padding: 6px 8px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.35;
+	border-radius: 4px;
+	color: var(--vscode-button-foreground, #fff);
+	background: var(--vscode-button-background, #AF50FF);
+}
+
+.monaco-workbench .frame-ai-edits-stub,
+.monaco-workbench .frame-ai-edits-applied {
+	margin: 0;
+	padding: 8px 10px;
+	font-size: 12px;
+	line-height: 1.4;
+	border-radius: 4px;
+	color: var(--vscode-foreground);
+	background: var(--vscode-inputValidation-infoBackground, var(--vscode-input-background));
+	border: 1px solid var(--vscode-inputValidation-infoBorder, var(--vscode-focusBorder, transparent));
+}
+
+.monaco-workbench .frame-ai-edits-applied {
+	font-weight: 600;
+	border-color: var(--vscode-focusBorder, var(--vscode-button-background));
+	background: var(--vscode-inputOption-activeBackground, var(--vscode-list-hoverBackground));
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-tool-call {
+	padding: 5px 0;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	border-bottom: 1px solid var(--vscode-widget-border, transparent);
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-tool-call.is-current {
+	padding: 6px 8px;
+	border: 1px solid var(--vscode-focusBorder, var(--vscode-button-background));
+	border-radius: 4px;
+	background: var(--vscode-inputOption-activeBackground, var(--vscode-list-hoverBackground));
+}
+
+.monaco-workbench .frame-ai-view.frame-ai-control .frame-ai-tools-list {
+	gap: 0;
+}
+
+.monaco-workbench .frame-ai-train-ready,
+.monaco-workbench .frame-ai-train-estimate {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--vscode-foreground);
+}
+
+.monaco-workbench .frame-ai-train-estimate {
+	color: var(--vscode-descriptionForeground);
+}
+
+.monaco-workbench .frame-ai-train-job {
+	padding: 8px;
+	border: 1px solid var(--vscode-widget-border, transparent);
+	border-radius: 4px;
+	background: var(--vscode-sideBar-background);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.monaco-workbench .frame-ai-train-job.running {
+	border-color: var(--vscode-focusBorder, var(--vscode-widget-border));
+}
+
+.monaco-workbench .frame-ai-train-job-title {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.monaco-workbench .frame-ai-train-job-status,
+.monaco-workbench .frame-ai-train-job-meta {
+	font-size: 11px;
+	color: var(--vscode-descriptionForeground);
+	word-break: break-word;
+}
+
+.monaco-workbench .frame-ai-train-job-error {
+	margin: 0;
+	font-size: 11px;
+	color: var(--vscode-errorForeground);
+	word-break: break-word;
+}
+
+.monaco-workbench .frame-ai-train-progress {
+	height: 4px;
+	border-radius: 2px;
+	background: var(--vscode-input-background, rgba(127, 127, 127, 0.2));
+	overflow: hidden;
+}
+
+.monaco-workbench .frame-ai-train-progress-fill {
+	height: 100%;
+	width: 0;
+	border-radius: 2px;
+	background: var(--vscode-progressBar-background, var(--vscode-focusBorder));
+	transition: width 0.2s ease;
+}

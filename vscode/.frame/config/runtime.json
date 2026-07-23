@@ -1,0 +1,6 @@
+{
+  "runtime": "llamacpp",
+  "activeModelId": "qwen-coder-7b-q4",
+  "modelPath": "/Users/zain/Frame/models/efficient/qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+  "enabled": true
+}

@@ -1,0 +1,14 @@
+{
+  "version": 4,
+  "activeModelId": "qwen-coder-7b-q4",
+  "models": [
+    {
+      "id": "qwen-coder-7b-q4",
+      "installed": true,
+      "localPath": "/Users/zain/Frame/models/efficient/qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+      "trustStatus": "UNVERIFIED",
+      "registeredAt": 1753099200000,
+      "updatedAt": 1753099200000
+    }
+  ]
+}
