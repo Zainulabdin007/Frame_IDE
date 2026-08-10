@@ -59,6 +59,8 @@ import { IFrameGenerationTracker } from '../preferences/frameGenerationTracker.j
 import { FrameGenerationTrackerService } from '../preferences/frameGenerationTrackerService.js';
 import { IFramePreferenceReviewService } from '../preferences/framePreferenceReview.js';
 import { FramePreferenceReviewService } from '../preferences/framePreferenceReviewService.js';
+import { IFramePreferenceTrainingService } from '../preferences/framePreferenceTraining.js';
+import { FramePreferenceTrainingService } from '../preferences/framePreferenceTrainingService.js';
 import { IFrameWorkspaceEditService } from '../editing/frameWorkspaceEditService.js';
 import { FrameWorkspaceEditService } from '../editing/frameWorkspaceEditService.js';
 import { IFrameToolLogService } from '../runtime/tools/frameToolLog.js';
@@ -86,6 +88,7 @@ registerSingleton(IFrameKnowledgeService, FrameKnowledgeService, InstantiationTy
 registerSingleton(IFrameToolExecutionService, FrameToolExecutionService, InstantiationType.Delayed);
 registerSingleton(IFrameMemoryService, FrameMemoryService, InstantiationType.Delayed);
 registerSingleton(IFrameObservationService, FrameObservationService, InstantiationType.Delayed);
+registerSingleton(IFramePreferenceTrainingService, FramePreferenceTrainingService, InstantiationType.Delayed);
 registerSingleton(IFramePreferenceReviewService, FramePreferenceReviewService, InstantiationType.Delayed);
 registerSingleton(IFrameGenerationTracker, FrameGenerationTrackerService, InstantiationType.Delayed);
 registerSingleton(IFrameRagService, FrameRagService, InstantiationType.Delayed);

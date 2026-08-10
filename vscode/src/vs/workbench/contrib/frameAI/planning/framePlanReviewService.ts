@@ -23,7 +23,7 @@ import { planFromTemplate } from './framePlanTemplates.js';
 export const IFramePlanReviewService = createDecorator<IFramePlanReviewService>('framePlanReviewService');
 
 /** How long a plan waits for an interactive Approve/Reject before auto-approving. */
-export const FRAME_PLAN_REVIEW_AUTO_APPROVE_MS = 20_000;
+export const FRAME_PLAN_REVIEW_AUTO_APPROVE_MS = 0;
 
 export type FramePlanReviewDecisionKind = 'approved' | 'rejected';
 

@@ -26,4 +26,7 @@ export interface IFramePreferenceReviewService {
 
 	/** Hide from the Learning list without approving (local dismiss). */
 	markReviewed(id: string): Promise<void>;
+
+	/** Last message from preference → LoRA schedule (if any). */
+	getLastTrainMessage(): string | undefined;
 }

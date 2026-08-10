@@ -104,6 +104,15 @@ Facade: `IFrameIntelligenceService.preferenceReview`
 
 ## What this does not do
 
-- Auto-apply preferences to the editor
-- Train models / create LoRA
+- Auto-apply preferences to the editor without Approve
 - Upload preferences anywhere
+- Auto-approve candidates
+
+## What Approve does now
+
+1. Activate preference into `.frame/memory/preferences.json` (context / prompt)
+2. Export related before→after observations into `.frame/training/preferences/`
+3. Debounce-schedule an on-device LoRA personalization job (`frame-prefs-user`)
+4. Status appears in Learning toast + Training / Adapters sections
+
+Weights update only after the local training job succeeds (MLX when available).

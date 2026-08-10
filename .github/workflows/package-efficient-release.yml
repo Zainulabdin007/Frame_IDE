@@ -1,0 +1,177 @@
+# Build Frame Efficient (IDE + 4-bit fused LoRA GGUF) on GitHub-hosted
+# Windows / Linux runners — no local Win/Linux machine required.
+#
+# Trigger from your Mac:
+#   gh workflow run package-efficient-release.yml \
+#     -f platform=both \
+#     -f model_url='https://YOUR_CDN/frame-agent-v1-fused-q4_k_m.gguf'
+#
+# Or set repo secret FRAME_MODEL_URL and omit model_url.
+#
+# Download artifacts when done:
+#   gh run download --name Frame-Efficient-win64
+#   gh run download --name Frame-Efficient-linux64
+#
+# Note: the full zip is ~5GB+. Host it on R2/S3/Backblaze for your website
+# (GitHub Release assets max out at 2GB per file).
+
+name: Package Efficient Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which OS bundle(s) to build
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - win64
+          - linux64
+      model_url:
+        description: HTTPS URL of frame-agent-v1-fused-q4_k_m.gguf (optional if FRAME_MODEL_URL secret is set)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-efficient-${{ github.ref }}-${{ inputs.platform }}
+  cancel-in-progress: true
+
+jobs:
+  select-matrix:
+    name: Select platforms
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - name: Build matrix JSON
+        id: set
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.platform }}" in
+            win64)
+              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"}]}'
+              ;;
+            linux64)
+              matrix='{"include":[{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
+              ;;
+            both)
+              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
+              ;;
+            *)
+              echo "Unknown platform input" >&2
+              exit 1
+              ;;
+          esac
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Package ${{ matrix.platform }}
+    needs: select-matrix
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h
+
+      - name: Install Linux build deps
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev \
+            libgtk-3-0 libgbm1 \
+            zip
+
+      - name: Setup Node.js 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: vscode
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Build IDE (${{ matrix.gulp_task }})
+        working-directory: vscode
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          set -euo pipefail
+          npm run gulp ${{ matrix.gulp_task }}
+
+      - name: Resolve model URL
+        id: model
+        shell: bash
+        env:
+          INPUT_MODEL_URL: ${{ inputs.model_url }}
+          SECRET_MODEL_URL: ${{ secrets.FRAME_MODEL_URL }}
+        run: |
+          set -euo pipefail
+          url="${INPUT_MODEL_URL:-}"
+          if [[ -z "$url" ]]; then
+            url="${SECRET_MODEL_URL:-}"
+          fi
+          if [[ -z "$url" ]]; then
+            echo "::error::No model URL. Pass workflow input model_url or set repo secret FRAME_MODEL_URL to an HTTPS URL of frame-agent-v1-fused-q4_k_m.gguf (~4.4GB)."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Download fused 4-bit model
+        shell: bash
+        env:
+          MODEL_URL: ${{ steps.model.outputs.url }}
+        run: |
+          set -euo pipefail
+          mkdir -p resources/frame-models
+          dest="resources/frame-models/frame-agent-v1-fused-q4_k_m.gguf"
+          echo "Downloading model → $dest"
+          curl -L --fail --retry 3 --retry-delay 5 -o "$dest" "$MODEL_URL"
+          ls -lh "$dest"
+
+      - name: Assemble release zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-efficient-release.sh
+          ./scripts/package-efficient-release.sh --platform ${{ matrix.platform }}
+          ls -lh dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frame-Efficient-${{ matrix.platform }}
+          path: |
+            dist/Frame-Efficient-${{ matrix.platform }}.zip
+            dist/Frame-Efficient-${{ matrix.platform }}.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

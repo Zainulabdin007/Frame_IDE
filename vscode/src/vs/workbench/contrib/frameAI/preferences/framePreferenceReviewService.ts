@@ -17,6 +17,7 @@ import {
 } from '../common/models.js';
 import { IFrameObservationService } from './frameObservation.js';
 import { IFramePreferenceReviewService } from './framePreferenceReview.js';
+import { IFramePreferenceTrainingService } from './framePreferenceTraining.js';
 
 interface IReviewDismissState {
 	readonly dismissedIds: string[];
@@ -24,7 +25,7 @@ interface IReviewDismissState {
 
 /**
  * Review facade over the observation engine.
- * Approve → PersistentMemory active preference.
+ * Approve → PersistentMemory active preference → schedule on-device LoRA personalization.
  * Reject / markReviewed → hidden from pending list.
  */
 export class FramePreferenceReviewService extends Disposable implements IFramePreferenceReviewService {
@@ -34,18 +35,21 @@ export class FramePreferenceReviewService extends Disposable implements IFramePr
 	private readonly _dismissed = new Set<string>();
 	private _folder: URI | undefined;
 	private _loadPromise: Promise<void> | undefined;
+	private _lastTrainMessage: string | undefined;
 
 	private readonly _onDidChange = this._register(new Emitter<void>());
 	readonly onDidChange: Event<void> = this._onDidChange.event;
 
 	constructor(
 		@IFrameObservationService private readonly observations: IFrameObservationService,
+		@IFramePreferenceTrainingService private readonly preferenceTraining: IFramePreferenceTrainingService,
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
 		this._register(this.observations.onDidChange(() => this._onDidChange.fire()));
+		this._register(this.preferenceTraining.onDidChange(() => this._onDidChange.fire()));
 		this._register(this.workspaceService.onDidChangeWorkspaceFolders(() => {
 			this._loadPromise = undefined;
 			this._folder = undefined;
@@ -62,15 +66,26 @@ export class FramePreferenceReviewService extends Disposable implements IFramePr
 			.sort((a, b) => b.confidence - a.confidence || b.observationCount - a.observationCount);
 	}
 
+	getLastTrainMessage(): string | undefined {
+		return this._lastTrainMessage;
+	}
+
 	async approvePreference(id: string): Promise<IFrameUserPreference | undefined> {
 		await this.ensureLoaded();
 		this._dismissed.delete(id);
+		const candidate = this.getPendingPreferences().find(c => c.id === id)
+			?? this.observations.getCandidatePreferences().find(c => c.id === id);
 		const result = await this.observations.approvePreference(id);
 		await this.persistDismissed();
-		this._onDidChange.fire();
-		if (result) {
+		if (result && candidate) {
+			const scheduled = await this.preferenceTraining.scheduleFromApprovedPreference(candidate, result);
+			this._lastTrainMessage = scheduled.message;
+			this.logService.info(`[FramePreferenceReview] Approved → memory + train: ${scheduled.message}`);
+		} else if (result) {
+			this._lastTrainMessage = 'Preference saved to memory.';
 			this.logService.info(`[FramePreferenceReview] Approved → active memory: ${result.preference}`);
 		}
+		this._onDidChange.fire();
 		return result;
 	}
 

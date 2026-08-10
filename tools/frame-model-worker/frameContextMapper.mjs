@@ -92,7 +92,7 @@ export function buildToolCallingInstructions(toolNames = FRAME_WORKER_TOOLS) {
 }
 
 /**
- * Teach the model how to propose workspace edits (applied via chat Apply UI).
+ * Teach the model how to propose workspace edits (IDE auto-applies safe plans).
  * @returns {string}
  */
 export function buildEditPlanInstructions() {
@@ -106,7 +106,7 @@ export function buildEditPlanInstructions() {
 		'For adding text at the top/bottom of an existing file, ALWAYS use prepend/append with only the new text. Do not repeat the full file.',
 		'For adding a new numbered line, use insert with a 1-based line number.',
 		'For modify/create, put the FULL file contents in content/newContent (not a patch).',
-		'Keep prose brief; the plan is what the IDE applies after the user clicks Apply.',
+		'Keep prose brief; the IDE applies a valid frame-edit-plan automatically when it is safe.',
 	].join('\n');
 }
 

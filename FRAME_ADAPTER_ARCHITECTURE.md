@@ -180,36 +180,26 @@ Legacy alias: `activeAdapters` → `adapters.active`.
 
 ---
 
-## 8. Future LoRA training pipeline (not implemented)
-
-When training is allowed later (explicit product decision):
+## 8. Preference → LoRA training pipeline
 
 ```
 Approved preferences / curated examples
         │
         ▼
-IFrameTrainingManager  (job queue — scaffold exists)
+IFramePreferenceTrainingService  (debounce + export JSONL)
         │
         ▼
-Local trainer (FUTURE)  ← no cloud; no silent downloads
+IFrameTrainingManager  (MLX Metal / CPU local job)
         │
         ▼
-Write real weights into .frame/adapters/<id>/LoRA.*
-Update metadata.trainingExamples + version
+Write weights into .frame/adapters/frame-prefs-user/mlx/
+Update adapter state Training → Active
         │
         ▼
-setAdapterState(id, Active)
-        │
-        ▼
-Context Engine selects adapter → local runtime applies LoRA
+Context Engine selects adapter → local runtime applies LoRA when GGUF path exists
 ```
 
-Until then:
-
-- Training jobs may be drafted in the training manager
-- Adapter service only stores metadata + placeholders
-- Inference runtime remains a stub
-
+Approve always writes preference memory first. Weight updates happen only after the local job succeeds.
 ---
 
 ## 9. Privacy / constraints

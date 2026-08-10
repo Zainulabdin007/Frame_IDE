@@ -146,7 +146,13 @@ When a local training pipeline exists:
 3. Fine-tune a user/style LoRA **on device**
 4. Register via `IFrameAdapterService`
 
-Until then: observation + approval only.
+**Implemented:** Approving a preference in Learning now:
+1. Writes active preference to `preferences.json` (prompt personalization)
+2. Appends chat-format rows under `.frame/training/preferences/`
+3. Debounces (~20s) then schedules/starts a short on-device LoRA job via `IFrameTrainingManager`
+4. Marks adapter `frame-prefs-user` Training → Active on success
+
+See `preferences/framePreferenceTrainingService.ts`.
 
 ## Source files
 

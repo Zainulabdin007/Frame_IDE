@@ -21,7 +21,7 @@ import { URI } from '../../../../base/common/uri.js';
 import { ViewPane, IViewPaneOptions } from '../../../browser/parts/views/viewPane.js';
 import { IViewDescriptorService } from '../../../common/views.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
-import { FrameAdapterScope, FrameAdapterState, FrameTrainingJobStatus, IFrameCandidatePreference, IFrameEditionRecommendation, IFrameHardwareProfile, IFrameModelDescriptor, IFrameRuntimeStatus, IFrameTrainingJob } from '../common/models.js';
+import { FrameAdapterScope, FrameAdapterState, FrameTrainingJobStatus, IFrameCandidatePreference, IFrameEditionRecommendation, IFrameHardwareProfile, IFrameRuntimeStatus, IFrameTrainingJob } from '../common/models.js';
 import { IFrameAdapterListItem } from '../adapters/frameAdapterManagement.js';
 import { isFrameBuiltinAdapter } from '../adapters/frameBuiltinAdapters.js';
 import { FRAME_STUB_PLAN_MESSAGE } from '../runtime/frameEditPlan.js';
@@ -118,8 +118,8 @@ export class FrameAIViewPane extends ViewPane {
 		this.scrollBody = DOM.append(this.root, $('.frame-ai-control-scroll'));
 
 		// Primary (expanded): Models → Preview Changes → Tool Activity
-		this.modelBodyEl = this.renderSection('models', localize('frameAI.modelsTitle', "Models"), localize('frameAI.modelsControlHint', "Activate a model, set path, and enable the local runtime."), true);
-		this.editsBodyEl = this.renderSection('edits', localize('frameAI.editsTitle', "Preview Changes"), localize('frameAI.editsHint', "Pending workspace edit plan. Chat may also apply non-stub plans."), true);
+		this.modelBodyEl = this.renderSection('models', localize('frameAI.modelsTitle', "Models"), localize('frameAI.modelsControlHint', "Shows the model you have installed versus the recommended edition for this machine."), true);
+		this.editsBodyEl = this.renderSection('edits', localize('frameAI.editsTitle', "Preview Changes"), localize('frameAI.editsHint', "Safe non-stub edit plans apply automatically. Use Undo if needed."), true);
 		this.toolsBodyEl = this.renderSection('tools', localize('frameAI.toolsTitle', "Tool Activity"), localize('frameAI.toolsHint', "Current and recent local tool calls."), true);
 
 		// Secondary (collapsed): everything else for chat-first users
@@ -127,7 +127,7 @@ export class FrameAIViewPane extends ViewPane {
 		this.statsBodyEl = this.renderSection('stats', localize('frameAI.statsTitle', "Runtime stats"), localize('frameAI.statsHint', "Worker status, RAM, and last inference timing."), false);
 		this.learningBodyEl = this.renderSection('learning', localize('frameAI.learningTitle', "Learning"), localize('frameAI.learningHint', "Candidate preferences awaiting Approve / Reject."), false);
 		this.knowledgeBodyEl = this.renderSection('knowledge', localize('frameAI.knowledgeTitle', "Knowledge"), localize('frameAI.knowledgeHint', "Workspace knowledge graph index status."), false);
-		this.planReviewBodyEl = this.renderSection('plan-review', localize('frameAI.planReviewTitle', "Plan Review"), localize('frameAI.planReviewHint', "Edit mode only — approve or reject before tools run (auto-approves after 20s)."), false);
+		this.planReviewBodyEl = this.renderSection('plan-review', localize('frameAI.planReviewTitle', "Plan Review"), localize('frameAI.planReviewHint', "Edit mode only — auto-approves immediately; Reject cancels the run."), false);
 		this.backgroundBodyEl = this.renderSection('background', localize('frameAI.backgroundTitle', "Background"), localize('frameAI.backgroundHint', "Idle local maintenance (index, RAG, preference candidates)."), false);
 		this.trainingBodyEl = this.renderSection('training', localize('frameAI.trainingTitle', "LoRA training"), localize(
 			'frameAI.trainingHint',
@@ -338,41 +338,48 @@ export class FrameAIViewPane extends ViewPane {
 		const active = this.intelligence.models.getActiveModel();
 		const status = this.intelligence.runtimes.getStatus();
 
-		// Primary actions first: enable runtime + model path
+		// Enable runtime + model path (no version picker)
 		this.renderRuntimeConfig(this.modelBodyEl);
 
-		const activeCard = DOM.append(this.modelBodyEl, $('.frame-ai-model-card.frame-ai-model-primary'));
-		DOM.append(activeCard, $('div.frame-ai-model-card-title', undefined, localize('frameAI.activeModel', "Active model")));
+		const installedCard = DOM.append(this.modelBodyEl, $('.frame-ai-model-card.frame-ai-model-primary'));
+		DOM.append(installedCard, $('div.frame-ai-model-card-title', undefined, localize('frameAI.installedModel', "Installed")));
 		if (active) {
-			DOM.append(activeCard, $('div.frame-ai-model-name', undefined, active.displayName));
-			DOM.append(activeCard, $('div.frame-ai-model-meta', undefined, `${active.edition} · ${active.precision ?? ''}`.trim()));
+			DOM.append(installedCard, $('div.frame-ai-model-name', undefined, active.displayName));
+			DOM.append(installedCard, $('div.frame-ai-model-meta', undefined, `${active.edition} · ${active.precision ?? ''}`.trim()));
 			if (status.modelPath) {
-				DOM.append(activeCard, $('div.frame-ai-model-path', undefined, status.modelPath));
+				DOM.append(installedCard, $('div.frame-ai-model-path', undefined, status.modelPath));
 			}
 		} else {
-			DOM.append(activeCard, $('p.frame-ai-empty', undefined, localize('frameAI.noActiveModel', "No active model. Select a recommendation below.")));
+			DOM.append(installedCard, $('p.frame-ai-empty', undefined, localize('frameAI.noInstalledModel', "No model installed yet.")));
 		}
 
-		const recCard = DOM.append(this.modelBodyEl, $('.frame-ai-model-card'));
+		const compareEl = DOM.append(this.modelBodyEl, $('div.frame-ai-model-compare'));
+		compareEl.textContent = localize('frameAI.modelCompareLoading', "Checking recommended edition…");
+
+		const recCard = DOM.append(this.modelBodyEl, $('.frame-ai-model-card.recommended'));
 		DOM.append(recCard, $('div.frame-ai-model-card-title', undefined, localize('frameAI.recommendedModel', "Recommended")));
 		const recPlaceholder = DOM.append(recCard, $('p.frame-ai-empty', undefined, localize('frameAI.recLoading', "Computing recommendation…")));
 
 		void this.intelligence.modelInstaller.recommendBestEdition().then(rec => {
 			DOM.clearNode(recCard);
 			DOM.append(recCard, $('div.frame-ai-model-card-title', undefined, localize('frameAI.recommendedModel', "Recommended")));
-			this.renderRecommendation(recCard, rec, active);
+			this.renderRecommendation(recCard, rec);
+			if (!active) {
+				compareEl.textContent = localize('frameAI.modelCompareMissing', "Install the recommended edition to get started.");
+			} else if (active.id === rec.modelId || active.edition === rec.edition) {
+				compareEl.textContent = localize('frameAI.modelCompareMatch', "Your installed model matches the recommendation.");
+			} else {
+				compareEl.textContent = localize(
+					'frameAI.modelCompareDiff',
+					"Installed: {0} · Recommended: {1}",
+					active.displayName,
+					rec.displayName,
+				);
+			}
 		}, () => {
 			recPlaceholder.textContent = localize('frameAI.recFail', "Could not compute recommendation.");
+			compareEl.textContent = '';
 		});
-
-		const list = this.intelligence.models.listModels();
-		if (list.length) {
-			const picker = DOM.append(this.modelBodyEl, $('.frame-ai-model-picker'));
-			DOM.append(picker, $('div.frame-ai-model-card-title', undefined, localize('frameAI.availableModels', "Available profiles")));
-			for (const model of list.slice(0, 8)) {
-				this.renderModelRow(picker, model, active?.id);
-			}
-		}
 	}
 
 	private renderRuntimeConfig(parent: HTMLElement): void {
@@ -421,46 +428,10 @@ export class FrameAIViewPane extends ViewPane {
 		}));
 	}
 
-	private renderRecommendation(parent: HTMLElement, rec: IFrameEditionRecommendation, active: IFrameModelDescriptor | undefined): void {
+	private renderRecommendation(parent: HTMLElement, rec: IFrameEditionRecommendation): void {
 		DOM.append(parent, $('div.frame-ai-model-name', undefined, rec.displayName));
 		DOM.append(parent, $('div.frame-ai-model-meta', undefined, rec.reason));
 		DOM.append(parent, $('div.frame-ai-model-meta', undefined, rec.hardwareSummary));
-		if (active?.id !== rec.modelId) {
-			const btn = DOM.append(parent, $('button.frame-ai-gen-action')) as HTMLButtonElement;
-			btn.type = 'button';
-			btn.textContent = localize('frameAI.activateRecommended', "Set active");
-			this.actionStore.add(DOM.addDisposableListener(btn, 'click', () => {
-				void this.intelligence.models.selectActiveModel(rec.modelId).then(async model => {
-					await this.intelligence.runtimes.updateConfig({
-						activeModelId: rec.modelId,
-						...(model?.localPath?.toLowerCase().endsWith('.gguf') ? { modelPath: model.localPath } : {}),
-					});
-					this.setStatus(localize('frameAI.modelActivated', "Active model set to {0}", rec.displayName));
-					this.refreshModels();
-				});
-			}));
-		}
-	}
-
-	private renderModelRow(parent: HTMLElement, model: IFrameModelDescriptor, activeId: string | undefined): void {
-		const row = DOM.append(parent, $('.frame-ai-model-row'));
-		DOM.append(row, $('div.frame-ai-model-name', undefined, model.displayName));
-		DOM.append(row, $('div.frame-ai-model-meta', undefined, `${model.edition}${model.active || model.id === activeId ? ' · active' : ''}`));
-		if (model.id !== activeId) {
-			const btn = DOM.append(row, $('button.frame-ai-gen-action secondary')) as HTMLButtonElement;
-			btn.type = 'button';
-			btn.textContent = localize('frameAI.setActive', "Activate");
-			this.actionStore.add(DOM.addDisposableListener(btn, 'click', () => {
-				void this.intelligence.models.selectActiveModel(model.id).then(async selected => {
-					await this.intelligence.runtimes.updateConfig({
-						activeModelId: model.id,
-						...(selected?.localPath?.toLowerCase().endsWith('.gguf') ? { modelPath: selected.localPath } : {}),
-					});
-					this.setStatus(localize('frameAI.modelActivated', "Active model set to {0}", model.displayName));
-					this.refreshModels();
-				});
-			}));
-		}
 	}
 
 	private refreshStats(): void {
@@ -523,10 +494,13 @@ export class FrameAIViewPane extends ViewPane {
 		const actions = DOM.append(card, $('.frame-ai-preference-actions'));
 		this.addStoreAction(this.learningActions, actions, localize('frameAI.approvePreference', "Approve"), true, () => {
 			void this.intelligence.preferenceReview.approvePreference(candidate.id).then(pref => {
+				const trainMsg = this.intelligence.preferenceReview.getLastTrainMessage();
 				this.setStatus(pref
-					? localize('frameAI.preferenceApproved', "Approved preference.")
+					? (trainMsg || localize('frameAI.preferenceApproved', "Approved preference."))
 					: localize('frameAI.preferenceApproveMiss', "Could not approve preference."));
 				this.refreshLearning();
+				this.refreshTraining();
+				this.refreshAdapters();
 			});
 		});
 		this.addStoreAction(this.learningActions, actions, localize('frameAI.rejectPreference', "Reject"), false, () => {

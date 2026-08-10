@@ -321,7 +321,7 @@ export class FrameOrchestratorService extends Disposable implements IFrameOrches
 				editPlanSummary = editPlan.summary;
 				message = editPlan.stub
 					? `${message}\n${editPlan.summary}`
-					: `${message}\nModel edit plan ready — review proposed edits in Chat and click Apply.`;
+					: `${message}\nModel edit plan ready — applying safe file changes.`;
 			} else if (editPlanId) {
 				// The planner's pre-inference plan never saw model output. When the
 				// model emitted a parsable ```frame-edit-plan```, it supersedes the
@@ -334,9 +334,9 @@ export class FrameOrchestratorService extends Disposable implements IFrameOrches
 					editPlanSummary = editPlan.summary;
 					message = editPlan.stub
 						? `${message}\n${editPlan.summary}`
-						: `${message}\nModel edit plan ready — review proposed edits in Chat and click Apply.`;
+						: `${message}\nModel edit plan ready — applying safe file changes.`;
 				} else if (editPlanSummary) {
-					message = `${message}\nEdit plan ready — review proposed edits in Chat and click Apply.`;
+					message = `${message}\nEdit plan ready — applying safe file changes.`;
 				}
 			}
 

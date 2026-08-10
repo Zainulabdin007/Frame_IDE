@@ -815,6 +815,13 @@
 	border-color: var(--vscode-focusBorder, var(--vscode-widget-border, transparent));
 }
 
+.monaco-workbench .frame-ai-model-compare {
+	margin: 8px 0 4px;
+	font-size: 12px;
+	line-height: 1.4;
+	color: var(--vscode-descriptionForeground);
+}
+
 .monaco-workbench .frame-ai-model-status {
 	font-weight: 500;
 }

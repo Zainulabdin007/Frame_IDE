@@ -12,7 +12,6 @@ import { localize } from '../../../../nls.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
-import { Range } from '../../../../editor/common/core/range.js';
 import { nullExtensionDescription } from '../../../services/extensions/common/extensions.js';
 import { ChatMode } from '../../chat/common/chatModes.js';
 import { ChatAgentLocation, ChatModeKind } from '../../chat/common/constants.js';
@@ -21,9 +20,8 @@ import { IChatAgentHistoryEntry, IChatAgentImplementation, IChatAgentRequest, IC
 import { isChatRequestFileEntry, isPromptFileVariableEntry, type IChatRequestVariableEntry } from '../../chat/common/attachments/chatVariableEntries.js';
 import { FrameMessageRole, FrameTaskKind, FrameTaskStatus, IFrameChatMessage } from '../common/models.js';
 import { IFrameWorkspaceEditService } from '../editing/frameWorkspaceEditService.js';
-import { IFrameEditOperation, stripFrameControlFences } from '../runtime/frameEditPlan.js';
+import { stripFrameControlFences } from '../runtime/frameEditPlan.js';
 import { IFrameIntelligenceService } from '../services/frameIntelligence.js';
-import { resolveSafeWorkspacePath } from '../runtime/tools/frameToolPath.js';
 
 const MAX_HISTORY_TURNS = 4;
 
@@ -319,8 +317,8 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 	}
 
 	/**
-	 * Surfaces model edit plans as chat textEdits so the user can Apply inline.
-	 * Stub plans (no real model fence) are summarized only — not auto-applied.
+	 * Applies validated non-stub edit plans directly to the workspace.
+	 * Stub / unsafe plans are reported only — never written.
 	 */
 	private async emitEditPlanProgress(
 		editPlanId: string | undefined,
@@ -337,14 +335,9 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 				kind: 'warning',
 				content: new MarkdownString(localize(
 					'frameChat.unsafePlan',
-					"Frame blocked an unsafe or incomplete edit plan. No file changes were offered.",
+					"Frame blocked an unsafe or incomplete edit plan. No file changes were written.",
 				)),
 			}]);
-			return;
-		}
-
-		const folder = this.workspaceService.getWorkspace().folders[0]?.uri;
-		if (!folder) {
 			return;
 		}
 
@@ -359,85 +352,47 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 			return;
 		}
 
-		const applyable = plan.operations.filter(op => op.kind === 'create' || op.kind === 'modify');
-		const structural = plan.operations.filter(op => op.kind === 'delete' || op.kind === 'rename');
-
-		const summaryLines: string[] = [
-			localize('frameChat.planReadyTitle', "**Proposed edits:** {0}", plan.summary),
-		];
-		if (applyable.length) {
-			summaryLines.push(localize(
-				'frameChat.planReadyApply',
-				"Review the file changes below and click **Apply** to write them to disk.",
-			));
-		}
-		if (structural.length) {
-			const bullets = structural.map(op => {
-				if (op.kind === 'delete') {
-					return `- delete \`${op.path}\``;
-				}
-				return `- rename \`${op.fromPath}\` → \`${op.toPath}\``;
-			}).join('\n');
-			summaryLines.push(localize(
-				'frameChat.planStructural',
-				"These operations apply from the Frame panel **Accept** (not Chat Apply):\n{0}",
-				bullets,
-			));
-		}
-		progress([{
-			kind: 'markdownContent',
-			content: new MarkdownString(summaryLines.join('\n\n')),
-		}]);
-
-		if (!applyable.length) {
+		if (!plan.operations.length) {
 			return;
 		}
 
-		const appliedIds: string[] = [];
-		for (const op of applyable) {
-			if (this.emitOperationTextEdit(folder, op, progress)) {
-				appliedIds.push(op.id);
+		const opSummary = plan.operations.map(op => {
+			if (op.kind === 'create' || op.kind === 'modify' || op.kind === 'delete') {
+				return `- \`${op.kind}\` \`${op.path}\``;
 			}
-		}
-		// Chat Apply writes via the VS Code textEdit path, not Frame Accept —
-		// mark those ops applied so the sidebar does not offer a double-write.
-		if (appliedIds.length) {
-			void this.workspaceEdits.markExternallyApplied(plan.id, appliedIds).catch(err => {
-				this.logService.warn(`[FrameChat] markExternallyApplied failed: ${err instanceof Error ? err.message : String(err)}`);
-			});
-		}
-	}
+			return `- rename \`${op.fromPath}\` → \`${op.toPath}\``;
+		}).join('\n');
 
-	private emitOperationTextEdit(
-		folder: URI,
-		op: IFrameEditOperation,
-		progress: (parts: IChatProgress[]) => void,
-	): boolean {
-		if (op.kind !== 'create' && op.kind !== 'modify') {
-			return false;
-		}
-		const resolved = resolveSafeWorkspacePath(folder, op.path);
-		if (!resolved.ok) {
-			this.logService.warn(`[FrameChat] Skipping unsafe edit path: ${op.path}`);
-			return false;
-		}
-		const content = op.kind === 'create' ? op.content : op.newContent;
-		const uri = resolved.uri;
-		// Full-file replacement — chat Apply UI shows a reviewable diff.
 		progress([{
-			kind: 'textEdit',
-			uri,
-			edits: [{
-				range: new Range(1, 1, Number.MAX_SAFE_INTEGER, 1),
-				text: content,
-			}],
+			kind: 'markdownContent',
+			content: new MarkdownString([
+				localize('frameChat.planApplyingTitle', "**Applying edits:** {0}", plan.summary),
+				opSummary,
+			].join('\n\n')),
 		}]);
+
+		const result = await this.workspaceEdits.acceptAll();
+		if (result.ok) {
+			this.logService.info(`[FrameChat] Auto-applied plan ${plan.id} (${result.appliedOperationIds.length} op(s))`);
+			progress([{
+				kind: 'markdownContent',
+				content: new MarkdownString(localize(
+					'frameChat.planApplied',
+					"Applied {0} file change(s) to the workspace.",
+					result.appliedOperationIds.length,
+				)),
+			}]);
+			return;
+		}
+
+		this.logService.warn(`[FrameChat] Auto-apply failed for ${plan.id}: ${result.message}`);
 		progress([{
-			kind: 'textEdit',
-			uri,
-			edits: [],
-			done: true,
+			kind: 'warning',
+			content: new MarkdownString(localize(
+				'frameChat.planApplyFailed',
+				"Could not apply the edit plan automatically: {0}",
+				result.message || 'unknown error',
+			)),
 		}]);
-		return true;
 	}
 }

@@ -2,7 +2,7 @@
  *  Copyright (c) Frame. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-import { basename, join } from '../../../../base/common/path.js';
+import { basename, dirname, join } from '../../../../base/common/path.js';
 import {
 	FrameAdapterKind,
 	FrameAdapterScope,
@@ -28,6 +28,12 @@ export const FRAME_BUILTIN_ADAPTER_PATH_ENV = 'FRAME_BUILTIN_ADAPTER_PATH';
 
 /** Basename of the builtin adapter metadata written by install_fused_base_model.py. */
 export const FRAME_BUILTIN_ADAPTER_METADATA_BASENAME = 'metadata.json';
+
+/**
+ * Default shipped Efficient (4-bit) fused base GGUF — LoRA baked in.
+ * Release packs place this under `resources/frame-models/` and/or sibling `models/`.
+ */
+export const FRAME_BUNDLED_BASE_MODEL_BASENAME = 'frame-agent-v1-fused-q4_k_m.gguf';
 
 export function isFrameBuiltinAdapterId(id: string | undefined | null): boolean {
 	return !!id && id === FRAME_BUILTIN_ADAPTER_ID;
@@ -78,7 +84,67 @@ export function getFrameBuiltinAdapterWeightCandidates(cwd?: string): readonly s
 		);
 	}
 
-	// Dedupe while preserving order
+	return dedupePaths(roots);
+}
+
+export interface IFrameBundledBaseModelLookup {
+	readonly cwd?: string;
+	/** VS Code `appRoot` (`…/resources/app`). */
+	readonly appRoot?: string;
+	/** Absolute path to the Frame / Electron binary. */
+	readonly execPath?: string;
+}
+
+/**
+ * Candidate paths for the bundled Efficient fused base model (IDE + model release zip).
+ * First existing file wins — never downloads.
+ */
+export function getFrameBundledBaseModelCandidates(opts?: IFrameBundledBaseModelLookup): readonly string[] {
+	const name = FRAME_BUNDLED_BASE_MODEL_BASENAME;
+	const roots: string[] = [];
+
+	const envPath = typeof process !== 'undefined' ? process.env?.FRAME_MODEL_PATH?.trim() : undefined;
+	if (envPath?.toLowerCase().endsWith('.gguf')) {
+		roots.push(envPath);
+	}
+
+	const execPath = opts?.execPath
+		?? (typeof process !== 'undefined' ? process.execPath : undefined);
+	if (execPath) {
+		const exeDir = dirname(execPath);
+		roots.push(
+			join(exeDir, 'resources', 'frame-models', name),
+			join(exeDir, 'models', name),
+			join(exeDir, '..', 'models', name),
+			join(exeDir, '..', 'resources', 'frame-models', name),
+		);
+	}
+
+	if (opts?.appRoot) {
+		// appRoot → …/resources/app → sibling frame-models / parent models
+		roots.push(
+			join(opts.appRoot, '..', 'frame-models', name),
+			join(opts.appRoot, '..', '..', 'models', name),
+			join(opts.appRoot, '..', '..', '..', 'models', name),
+		);
+	}
+
+	const base = opts?.cwd
+		?? (typeof process !== 'undefined' && typeof process.cwd === 'function' ? process.cwd() : '');
+	if (base) {
+		roots.push(
+			join(base, 'resources', 'frame-models', name),
+			join(base, '.frame', 'models', name),
+			join(base, 'models', name),
+			join(base, '..', 'resources', 'frame-models', name),
+			join(base, '..', 'models', name),
+		);
+	}
+
+	return dedupePaths(roots);
+}
+
+function dedupePaths(roots: readonly string[]): string[] {
 	const seen = new Set<string>();
 	const out: string[] = [];
 	for (const p of roots) {

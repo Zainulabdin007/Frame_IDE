@@ -7,6 +7,7 @@ import { Emitter, Event } from '../../../../base/common/event.js';
 import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
 import { joinPath } from '../../../../base/common/resources.js';
 import { URI } from '../../../../base/common/uri.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
@@ -37,8 +38,10 @@ import { IFrameToolExecutionService } from './tools/frameToolExecutionService.js
 import {
 	FRAME_BUILTIN_ADAPTER_ID,
 	FRAME_BUILTIN_ADAPTER_METADATA_BASENAME,
+	FRAME_BUILTIN_BASE_MODEL,
 	FRAME_BUILTIN_WEIGHT_BASENAME,
 	frameModelPathLooksFused,
+	getFrameBundledBaseModelCandidates,
 	getFrameBuiltinAdapterWeightCandidates,
 	mergeBuiltinAdapterPaths,
 } from '../adapters/frameBuiltinAdapters.js';
@@ -79,6 +82,7 @@ export class FrameRuntimeService extends Disposable implements IFrameRuntimeServ
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@IPathService private readonly pathService: IPathService,
+		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@ILogService private readonly logService: ILogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IFrameModelService private readonly modelService: IFrameModelService,
@@ -330,19 +334,26 @@ export class FrameRuntimeService extends Disposable implements IFrameRuntimeServ
 				enabled: this._config.modelPath ? true : this._config.enabled,
 			};
 		}
-		if (!this._config.modelPath) {
-			const envPath = typeof process !== 'undefined' ? process.env?.FRAME_MODEL_PATH : undefined;
-			if (envPath?.toLowerCase().endsWith('.gguf')) {
+		let discoveredBundled = false;
+		if (!this._config.modelPath || !(await this.fileExists(this._config.modelPath))) {
+			const bundled = await this.resolveBundledBaseModelPath();
+			if (bundled) {
 				this._config = {
 					...this._config,
-					modelPath: envPath,
+					modelPath: bundled,
 					runtime: 'llamacpp',
 					enabled: true,
-					activeModelId: this._config.activeModelId ?? 'qwen-coder-7b-q4',
+					activeModelId: this._config.activeModelId ?? FRAME_BUILTIN_BASE_MODEL,
 				};
+				discoveredBundled = true;
+				this.logService.info(`[FrameRuntime] Using bundled Efficient model at ${bundled}`);
 			}
 		}
 		await this.ensureConfigFile();
+		if (discoveredBundled) {
+			// Persist so empty-window / later sessions keep the same GGUF without re-picking.
+			await this.persistConfig();
+		}
 		const activeId = this._config.activeModelId ?? 'qwen-coder-7b-q4';
 		await this.modelService.selectActiveModel(activeId);
 		if (this._config.modelPath) {
@@ -686,6 +697,34 @@ export class FrameRuntimeService extends Disposable implements IFrameRuntimeServ
 			updatedAt: this._config.updatedAt ?? Date.now(),
 		};
 		await this.fileService.writeFile(uri, VSBuffer.fromString(JSON.stringify(body, null, 2) + '\n'));
+	}
+
+	/**
+	 * Find a locally bundled Efficient fused GGUF (release zip / resources / cwd).
+	 * Never downloads — only checks filesystem candidates.
+	 */
+	private async resolveBundledBaseModelPath(): Promise<string | null> {
+		const folder = this.primaryFolder();
+		const candidates = getFrameBundledBaseModelCandidates({
+			cwd: folder?.fsPath
+				?? (typeof process !== 'undefined' && typeof process.cwd === 'function' ? process.cwd() : undefined),
+			appRoot: this.environmentService.appRoot,
+			execPath: typeof process !== 'undefined' ? process.execPath : undefined,
+		});
+		for (const candidate of candidates) {
+			if (await this.fileExists(candidate)) {
+				return candidate;
+			}
+		}
+		return null;
+	}
+
+	private async fileExists(fsPath: string): Promise<boolean> {
+		try {
+			return await this.fileService.exists(URI.file(fsPath));
+		} catch {
+			return false;
+		}
 	}
 
 	private async ensureDir(uri: URI): Promise<void> {

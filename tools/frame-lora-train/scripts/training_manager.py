@@ -11,6 +11,7 @@ Job state lives under tools/frame-lora-train/jobs/<job_id>/
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import os
 import platform
@@ -345,8 +346,16 @@ def _pid_alive(pid: int | None) -> bool:
 	try:
 		os.kill(pid, 0)
 		return True
-	except OSError:
+	except ProcessLookupError:
 		return False
+	except PermissionError:
+		# Process exists but we can't signal it (sandbox / ownership) — treat as alive.
+		return True
+	except OSError as err:
+		# ESRCH = gone; EPERM = exists. Other errors: be conservative and assume alive.
+		if getattr(err, "errno", None) == getattr(errno, "ESRCH", 3):
+			return False
+		return True
 
 
 def pause_job(job_id: str) -> dict[str, Any]:

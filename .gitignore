@@ -7,6 +7,9 @@
 
 # Local models / runtime (keep out of git)
 .frame/models/**/*.gguf
+resources/frame-models/**/*.gguf
+VSCode-win32-*/
+VSCode-linux-*/
 .frame/logs/
 .frame/rag/
 tools/frame-lora-train/data/
