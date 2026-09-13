@@ -56,7 +56,8 @@ jobs:
           set -euo pipefail
           case "${{ inputs.platform }}" in
             win64)
-              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"}]}'
+              # windows-2022 still has VS 2022; windows-latest is VS 18 and breaks preinstall/node-gyp
+              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"}]}'
               ;;
             linux64)
               matrix='{"include":[{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
@@ -65,7 +66,7 @@ jobs:
               matrix='{"include":[{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
               ;;
             all)
-              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"},{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
+              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"},{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
               ;;
             *)
               echo "Unknown platform input" >&2
