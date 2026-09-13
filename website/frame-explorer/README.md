@@ -1,18 +1,21 @@
 # Frame showcase preview
 
-Interactive stand-ins for the two marketing 16:9 boxes on the Frame site.
+Mirrors the two 16:9 marketing boxes on the Frame site (`Loom_web` at `localhost:5173`).
 
-## What’s in each box
+## Run
 
-1. **Product overview** — Frame Desktop (activity + Models / Learning) beside an agent chat with local badge and tool trail.
-2. **Confirm flow** — Before / after edit plan with Accept · Undo, then a learning preference Approve / Reject.
+Prefer the live site — those boxes are wired there already.
 
-## Preview
+For a standalone copy of styles/behavior:
 
 ```bash
 cd website/frame-explorer
 python3 -m http.server 8765
-# open http://localhost:8765
 ```
 
-The live site copies live in `Loom_web` (`src/cicada/cicadaMarkup.html`, `frameShowcases.css`, `initFrameShowcases.js`).
+Open `http://localhost:5173/#about` and `#demo` for the real preview.
+
+## Box contents
+
+1. **About** — draggable Frame Desktop (Models / Search / SCM / Extensions) + Agent chat window; traffic lights minimize to a dock; green zooms.
+2. **Demo** — Confirm before/after edit plan with Accept · Undo, then Learning preference Approve · Reject.

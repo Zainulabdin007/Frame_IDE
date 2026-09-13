@@ -4,180 +4,27 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Frame · Showcase preview</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./frameShowcases.css" />
   <style>
-    :root {
-      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-      --font-ui: "IBM Plex Sans", system-ui, sans-serif;
-    }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: var(--font-ui);
-      background: #000;
-      color: #f7f9fa;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      background: #0b0b0f;
+      color: #d6d6da;
+      text-align: center;
+      padding: 24px;
     }
-    .page {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 48px 24px 80px;
-    }
-    .brand {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-size: 28px;
-      margin: 0 0 8px;
-    }
-    .note {
-      color: #8a8a90;
-      font-size: 14px;
-      margin: 0 0 40px;
-      max-width: 52ch;
-      line-height: 1.5;
-    }
-    .block { margin-bottom: 56px; }
-    .eyebrow {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #8a8a90;
-      margin: 0 0 8px;
-    }
-    h2 {
-      font-family: "Instrument Serif", Georgia, serif;
-      font-weight: 400;
-      font-size: 32px;
-      margin: 0 0 10px;
-    }
-    .lead {
-      color: #a8a8ae;
-      font-size: 15px;
-      line-height: 1.5;
-      margin: 0 0 20px;
-      max-width: 60ch;
-    }
-    .frame-showcase { margin-top: 0; }
+    a { color: #c9a0ff; }
+    p { max-width: 42ch; line-height: 1.5; margin: 0 auto 12px; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <p class="brand">Frame</p>
-    <p class="note">Preview of the two marketing showcase boxes — same compositions wired into Loom_web <code>localhost:5173</code>.</p>
-
-    <section class="block">
-      <p class="eyebrow">Meet Frame</p>
-      <h2>The AI IDE that learns you.</h2>
-      <p class="lead">Box 1 — Frame Desktop (models / activity) + agent chat filling the 16:9 frame.</p>
-      <div class="frame-showcase frame-showcase--orange" data-frame-showcase="overview">
-        <div class="frame-showcase__stage">
-          <div class="fs-desktop">
-            <div class="fs-titlebar">
-              <div class="fs-traffic" aria-hidden="true"><i></i><i></i><i></i></div>
-              <div class="fs-title">Frame Desktop · Models</div>
-            </div>
-            <div class="fs-shell">
-              <nav class="fs-activity" aria-label="Activity">
-                <button type="button" class="fs-act is-active" data-fs-act="Frame" title="Frame" aria-label="Frame">
-                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 0h5v5H9V9z"/></svg>
-                </button>
-                <button type="button" class="fs-act" data-fs-act="Search" title="Search" aria-label="Search">
-                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.7 9.3a4.5 4.5 0 1 0-.4.4l3.2 3.2.4-.4-3.2-3.2zM6.5 10a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
-                </button>
-                <button type="button" class="fs-act" data-fs-act="Source Control" title="Source Control" aria-label="Source Control">
-                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3a1.5 1.5 0 1 1-1.4 2H7.5A2.5 2.5 0 0 0 5 7.5v1.1a1.5 1.5 0 1 1-1 0V7.5A3.5 3.5 0 0 1 7.5 4h1.6A1.5 1.5 0 0 1 10.5 3zm-7 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7-8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>
-                </button>
-                <button type="button" class="fs-act" data-fs-act="Extensions" title="Extensions" aria-label="Extensions">
-                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1v2H3v2H1v6h2v2h2v2h6v-2h2v-2h2V5h-2V3h-2V1H5zm1 1h4v2h2v2h2v4h-2v2h-2v2H6v-2H4v-2H2V6h2V4h2V2z"/></svg>
-                </button>
-              </nav>
-              <div class="fs-panel">
-                <h3>Frame</h3>
-                <p class="fs-sub">Local models &amp; learning for this workspace.</p>
-                <div class="fs-card">
-                  <div class="fs-card__label">Installed</div>
-                  <div class="fs-card__title">Efficient · Qwen2.5-Coder 7B</div>
-                  <div class="fs-card__meta">GGUF · ready on device</div>
-                  <div class="fs-path">~/Library/Application Support/Frame/models/…</div>
-                </div>
-                <div class="fs-row"><span>Runtime</span><button type="button" class="fs-toggle" data-fs-toggle>On</button></div>
-                <p class="fs-compare">Recommended next: Maximum · stronger reasoning, larger VRAM.</p>
-                <div class="fs-card" style="border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);">
-                  <div class="fs-card__label">Learning</div>
-                  <div class="fs-card__title">Preferences · 3 pending</div>
-                  <div class="fs-card__meta">Approve to schedule on-device LoRA</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="fs-chat">
-            <div class="fs-titlebar">
-              <div class="fs-title" style="margin: 0; text-align: left; padding-left: 0.08rem;">Agent · this workspace</div>
-            </div>
-            <div class="fs-chat__body">
-              <div class="fs-chip">Local · Efficient</div>
-              <div class="fs-bubble fs-bubble--user">Tighten auth middleware — keep our existing error shape.</div>
-              <div class="fs-tool"><strong>read</strong> src/middleware/auth.ts</div>
-              <div class="fs-tool"><strong>edit plan</strong> guard early return · match AppError</div>
-              <div class="fs-bubble fs-bubble--assistant">Drafted a plan that preserves <code>AppError</code> and your early-return style. Accept when it looks right — Frame will learn from the confirm.</div>
-            </div>
-            <div class="fs-chat__input">
-              <input type="text" data-fs-input placeholder="Ask Frame…" aria-label="Ask Frame" />
-              <button type="button" data-fs-send>Send</button>
-            </div>
-          </div>
-        </div>
-        <div class="fs-toast" data-fs-toast></div>
-      </div>
-    </section>
-
-    <section class="block">
-      <p class="eyebrow">How it works</p>
-      <h2>You confirm.</h2>
-      <p class="lead">Box 2 — before / after edit plan with Accept · Undo, then a learning preference Approve / Reject.</p>
-      <div class="frame-showcase" data-frame-showcase="confirm">
-        <div class="frame-showcase__stage frame-showcase__stage--confirm">
-          <div class="fs-diff">
-            <div class="fs-diff__label fs-diff__label--before">Before · auth.ts</div>
-            <pre class="fs-code"><span class="del">- if (!token) throw new Error("unauthorized")</span>
-  const user = await session(token)
-<span class="del">- if (!user) return res.status(401).end()</span>
-  return next()</pre>
-          </div>
-          <div class="fs-diff">
-            <div class="fs-diff__label fs-diff__label--after">After · proposed</div>
-            <pre class="fs-code"><span class="add">+ if (!token) throw new AppError(401, "unauthorized")</span>
-  const user = await session(token)
-<span class="add">+ if (!user) throw new AppError(401, "invalid session")</span>
-  return next()</pre>
-          </div>
-          <div class="fs-confirm-bar">
-            <p data-fs-status>Edit plan ready · <strong>Accept</strong> applies, <strong>Undo</strong> reverts</p>
-            <div class="fs-actions">
-              <button type="button" class="fs-btn fs-btn--primary" data-fs-accept>Accept</button>
-              <button type="button" class="fs-btn fs-btn--ghost" data-fs-undo>Undo</button>
-            </div>
-          </div>
-          <div class="fs-pref" data-fs-pref>
-            <div class="fs-pref__text">
-              <span>Learning signal</span>
-              Prefer AppError over generic Error in middleware — save for this project?
-            </div>
-            <div class="fs-actions">
-              <button type="button" class="fs-btn fs-btn--primary" data-fs-approve>Approve</button>
-              <button type="button" class="fs-btn fs-btn--ghost" data-fs-reject>Reject</button>
-            </div>
-          </div>
-        </div>
-        <div class="fs-toast" data-fs-toast></div>
-      </div>
-    </section>
+  <div>
+    <p>The filled showcase boxes live on the marketing site.</p>
+    <p><a href="http://localhost:5173/#about">localhost:5173/#about</a> · product overview</p>
+    <p><a href="http://localhost:5173/#demo">localhost:5173/#demo</a> · confirm before / after</p>
   </div>
-  <script type="module">
-    import { initFrameShowcases } from './initFrameShowcases.js'
-    initFrameShowcases()
-  </script>
 </body>
 </html>
