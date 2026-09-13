@@ -1,61 +1,52 @@
-# First-time setup
+# First-time setup (all editions)
 
-> **Paste this whole page into ChatGPT** (or any assistant) if you get stuck — ask it to walk you through the steps for your OS (macOS / Windows / Linux).
+> Paste the guide for **your edition** into ChatGPT if you get stuck.
 
-Frame’s GitHub Release is the **IDE only** (when IDE assets are published) plus our **agent LoRA**. You bring the base model. That keeps Release assets under GitHub’s 2GB limit.
+Same Frame IDE + same Frame agent LoRA for every edition. Only the **base GGUF** changes (4-bit / 8-bit / FP16).
 
-**Releases:** https://github.com/Zainulabdin007/Frame_IDE/releases/latest
+| Edition | Release | Base GGUF to download |
+|---------|---------|------------------------|
+| **Efficient** (default) | [v0.1.0-beta](https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta) | Qwen2.5-Coder-7B-Instruct **Q4_K_M** |
+| **Professional** | [v0.1.0-beta-professional](https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta-professional) | Qwen2.5-Coder-7B-Instruct **Q8_0** (or Q8_K) |
+| **Maximum** | [v0.1.0-beta-maximum](https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta-maximum) | Qwen2.5-Coder-7B-Instruct **F16** / **fp16** |
 
----
-
-## 1. Install Frame (IDE)
-
-When IDE assets appear on the release (or you build from source with `./scripts/launch-frame.sh`):
-
-| OS | Asset | Notes |
-|----|--------|--------|
-| macOS (Apple Silicon) | `Frame-macOS-arm64.dmg` | Unsigned beta — right-click **Frame** → **Open** the first time. |
-| Windows x64 | `Frame-IDE-win64.zip` | Unzip and run `Frame.exe`. |
-| Linux x64 | `Frame-IDE-linux64.tar.gz` | Extract and run the `frame` binary. |
-
-Until those assets ship, clone the repo and run `./scripts/launch-frame.sh` on Apple Silicon for development.
+Each release page attaches **`frame-agent-v2-lora.zip`** (same file). The LoRA applies on top of whichever base you pick.
 
 ---
 
-## 2. Get the Frame agent LoRA (we give you this)
+## Shared steps
 
-From the **same Releases page**, download:
+### 1. Install Frame (IDE)
 
-- **`frame-agent-v2-lora.zip`** (~81MB) — contains `adapters.safetensors` + config
+From any edition release (or the Efficient one once IDE assets are published):
 
-Unzip it:
+| OS | Asset |
+|----|--------|
+| Windows x64 | `Frame-IDE-win64.zip` (optional `Frame-IDE-win64-Setup.exe`) |
+| Linux x64 | `Frame-IDE-linux64.tar.gz` |
+| macOS | Not published yet — use `./scripts/launch-frame.sh` from a clone |
+
+macOS DMGs are paused until Apple signing / notarization (unsigned builds trip Gatekeeper “damaged” warnings).
+
+### 2. Download our LoRA
+
+From **your edition’s** release Assets:
 
 ```bash
 unzip frame-agent-v2-lora.zip
 # → frame-agent-lora/adapters.safetensors
 ```
 
----
+### 3. Download the base GGUF (edition-specific)
 
-## 3. Get a base model (you download this)
+Hugging Face: search `Qwen2.5-Coder-7B-Instruct` + `GGUF`, then pick the quant for your edition (table above). Not hosted on GitHub (too large).
 
-You need a **Qwen2.5-Coder-7B-Instruct** GGUF in **Q4_K_M** (Efficient / ~4-bit). Not on GitHub (too large).
+### 4. Wire into Frame
 
-1. Hugging Face: search `Qwen2.5-Coder-7B-Instruct` + `GGUF` + `Q4_K_M`.
-2. Download one `*Q4_K_M*.gguf` (several GB).
-3. Save it, e.g. `~/models/Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf`
-
----
-
-## 4. Wire them into Frame
-
-1. Open Frame → **Frame** sidebar → set **model path** to your base GGUF → enable runtime.
-2. Install the LoRA:
-
-**With a Frame_IDE git checkout** (sidebar Import also works if exposed):
+1. Frame sidebar → model path = your base GGUF → enable runtime.
+2. Install LoRA:
 
 ```bash
-# Copy LoRA into the workspace adapter slot Frame reads
 mkdir -p /path/to/your/project/.frame/adapters/frame-agent-v1
 cp frame-agent-lora/adapters.safetensors \
   /path/to/your/project/.frame/adapters/frame-agent-v1/adapters.safetensors
@@ -63,32 +54,44 @@ cp frame-agent-lora/adapter_config.json \
   /path/to/your/project/.frame/adapters/frame-agent-v1/adapter_config.json 2>/dev/null || true
 ```
 
-Or use Frame’s adapter import UI if available: import `adapters.safetensors` as the Frame agent adapter and keep it active.
+3. Reload Frame.
 
-3. Restart Frame / reload the window.
-
-### Advanced — fuse into one GGUF
-
-See [`FRAME_BUILTIN_ADAPTER.md`](../FRAME_BUILTIN_ADAPTER.md). Most people should skip this.
-
----
-
-## 5. Smoke test
+### 5. Smoke test
 
 ```text
 Add a comment at the top of README.md that says hello from Frame.
 ```
 
-You should see an edit apply in the editor, not only a claim in chat.
+---
+
+## Edition notes
+
+### Efficient (Q4)
+
+- Lowest RAM/VRAM. Best laptop default.
+- Release: https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta
+
+### Professional (Q8)
+
+- Heavier, usually sharper coding than Q4.
+- Same LoRA zip as Efficient — do **not** retrain; just use an 8-bit base GGUF.
+- Release: https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta-professional
+
+### Maximum (FP16)
+
+- Highest fidelity, largest download and memory.
+- Same LoRA zip; use an F16/fp16 Instruct GGUF.
+- Release: https://github.com/Zainulabdin007/Frame_IDE/releases/tag/v0.1.0-beta-maximum
 
 ---
 
 ## Maintainers
 
 ```bash
-# Package LoRA zip (already in dist/ when built locally)
-# Upload: gh release upload v0.1.0-beta dist/frame-agent-v2-lora.zip --clobber
+# Same LoRA on every edition release
+gh release upload v0.1.0-beta-professional dist/frame-agent-v2-lora.zip --clobber
+gh release upload v0.1.0-beta-maximum dist/frame-agent-v2-lora.zip --clobber
 
-# IDE installers (long CI):
-./scripts/trigger-ide-release.sh --tag v0.1.0-beta --platform all
+# IDE installers (once): attach to Efficient tag or all three
+./scripts/trigger-ide-release.sh --tag v0.1.0-beta --platform win-linux
 ```

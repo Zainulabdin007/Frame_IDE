@@ -126,7 +126,7 @@ Docs: `tools/frame-lora-train/README.md`, `FRAME_PREFERENCE_LEARNING.md`, `FRAME
 
 | Piece | Role |
 |-------|------|
-| `scripts/package-ide-release.sh` | IDE-only Win zip / Linux tarball / macOS DMG (no GGUF) |
+| `scripts/package-ide-release.sh` | IDE-only Win zip / Linux tarball (no GGUF; macOS DMG deferred) |
 | `.github/workflows/publish-ide-release.yml` | Build + publish IDE assets to a GitHub Release |
 | `scripts/trigger-ide-release.sh` | `gh workflow run` helper for IDE releases |
 | `scripts/package-efficient-release.sh` | Optional CDN bundle: IDE + fused Q4 (~5GB+) |

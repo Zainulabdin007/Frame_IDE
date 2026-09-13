@@ -630,10 +630,16 @@ function patchWin32DependenciesTask(destinationFolderName: string) {
 	const cwd = path.join(path.dirname(root), destinationFolderName);
 
 	return async () => {
-		// Beta/OSS packaging: skip when Windows SDK signing tools aren't installed.
+		// Unsigned beta / GitHub Actions: skip Authenticode strip + rcedit when
+		// there is no Windows SDK signtool (or FRAME_SKIP_WIN32_SIGN=1).
+		if (process.env['FRAME_SKIP_WIN32_SIGN'] === '1') {
+			console.warn('[patchWin32DependenciesTask] Skipping — FRAME_SKIP_WIN32_SIGN=1.');
+			return;
+		}
 		const signtoolMissing = await new Promise<boolean>(resolve => {
-			const proc = cp.spawn('signtool.exe', []);
+			const proc = cp.spawn('signtool.exe', ['/?'], { windowsHide: true });
 			proc.on('error', (err: NodeJS.ErrnoException) => resolve(err.code === 'ENOENT'));
+			// Help exit is non-zero on some SDKs; still means the tool exists.
 			proc.on('exit', () => resolve(false));
 		});
 		if (signtoolMissing) {

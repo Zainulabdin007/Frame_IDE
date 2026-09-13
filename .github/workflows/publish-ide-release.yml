@@ -4,11 +4,13 @@
 #
 # Trigger:
 #   gh workflow run publish-ide-release.yml \
-#     -f platform=all \
+#     -f platform=win-linux \
 #     -f tag=v0.1.0
 #
 # Or:
-#   ./scripts/trigger-ide-release.sh --tag v0.1.0 --platform all
+#   ./scripts/trigger-ide-release.sh --tag v0.1.0 --platform win-linux
+#
+# macOS DMG is intentionally omitted until Apple signing / notarization is ready.
 
 name: Publish IDE Release
 
@@ -16,16 +18,15 @@ on:
   workflow_dispatch:
     inputs:
       platform:
-        description: Which OS asset(s) to build
+        description: Which OS asset(s) to build (Windows + Linux only for now)
         required: true
-        default: all
+        default: win-linux
         type: choice
         options:
-          - all
           - win-linux
+          - all
           - win64
           - linux64
-          - darwin-arm64
       tag:
         description: Release tag (created or reused)
         required: true
@@ -63,17 +64,12 @@ jobs:
             linux64)
               matrix='{"include":[{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
               ;;
-            darwin-arm64)
-              matrix='{"include":[{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
-              ;;
-            win-linux)
+            win-linux|all)
+              # `all` currently means Windows + Linux; macOS DMG deferred.
               matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
               ;;
-            all)
-              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"},{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
-              ;;
             *)
-              echo "Unknown platform input" >&2
+              echo "Unknown platform input (darwin/macOS builds are disabled for now)" >&2
               exit 1
               ;;
           esac
@@ -135,8 +131,22 @@ jobs:
         shell: bash
         env:
           NODE_OPTIONS: --max-old-space-size=8192
+          # Unsigned beta: do not require Windows SDK signtool / Authenticode.
+          FRAME_SKIP_WIN32_SIGN: ${{ matrix.platform == 'win64' && '1' || '0' }}
         run: |
           set -euo pipefail
+          # Prefer Windows SDK signtool on PATH when present (optional; skip covers absence).
+          if [[ "${{ matrix.platform }}" == "win64" ]]; then
+            for sdk in \
+              "/c/Program Files (x86)/Windows Kits/10/bin/"*/x64 \
+              "/c/Program Files (x86)/Windows Kits/10/bin/10.0."*/x64; do
+              if [[ -x "${sdk}/signtool.exe" ]]; then
+                export PATH="${sdk}:${PATH}"
+                echo "Added Windows SDK to PATH: ${sdk}"
+                break
+              fi
+            done
+          fi
           npm run gulp ${{ matrix.gulp_task }}
 
       - name: Assemble IDE-only release asset
@@ -154,6 +164,7 @@ jobs:
         continue-on-error: true
         env:
           NODE_OPTIONS: --max-old-space-size=8192
+          FRAME_SKIP_WIN32_SIGN: '1'
         run: |
           set -euo pipefail
           npm run gulp vscode-win32-x64-user-setup || true
@@ -178,8 +189,6 @@ jobs:
             dist/Frame-IDE-*.tar.gz.sha256
             dist/Frame-IDE-*-Setup.exe
             dist/Frame-IDE-*-Setup.exe.sha256
-            dist/Frame-macOS-*.dmg
-            dist/Frame-macOS-*.dmg.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0
@@ -233,7 +242,7 @@ jobs:
             |----|--------|
             | Windows x64 | `Frame-IDE-win64.zip` (and `Frame-IDE-win64-Setup.exe` when the Setup build succeeds) |
             | Linux x64 | `Frame-IDE-linux64.tar.gz` |
-            | macOS Apple Silicon | `Frame-macOS-arm64.dmg` (unsigned beta — right-click → Open the first time) |
+            | macOS | Not published yet (unsigned DMG Gatekeeper issues — use `./scripts/launch-frame.sh` from a clone) |
           files: |
             release-assets/*
         env:

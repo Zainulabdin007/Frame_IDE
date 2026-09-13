@@ -4,17 +4,17 @@
 # Usage:
 #   ./scripts/package-ide-release.sh --platform win64
 #   ./scripts/package-ide-release.sh --platform linux64
-#   ./scripts/package-ide-release.sh --platform darwin-arm64
 #   ./scripts/package-ide-release.sh --platform win64 --build
 #
 # Prerequisites:
-#   Packaged IDE at VSCode-win32-x64/ | VSCode-linux-x64/ | VSCode-darwin-arm64/
+#   Packaged IDE at VSCode-win32-x64/ | VSCode-linux-x64/
 #   (sibling of vscode/) unless --build is passed on a matching OS/CI runner.
 #
 # Output under dist/:
 #   Frame-IDE-win64.zip (+ .sha256)
 #   Frame-IDE-linux64.tar.gz (+ .sha256)
-#   Frame-macOS-arm64.dmg (+ .sha256)
+#
+# macOS DMG packaging is disabled until signing/notarization is ready.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,9 +23,9 @@ DO_BUILD=0
 
 usage() {
   cat <<'EOF'
-Usage: package-ide-release.sh --platform win64|linux64|darwin-arm64 [--build]
+Usage: package-ide-release.sh --platform win64|linux64 [--build]
 
-  --platform   Target OS bundle
+  --platform   Target OS bundle (Windows / Linux only for now)
   --build      Run gulp package for that platform first (needs matching OS/CI)
 EOF
 }
@@ -53,7 +53,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$PLATFORM" ]]; then
-  echo "error: --platform win64|linux64|darwin-arm64 is required" >&2
+  echo "error: --platform win64|linux64 is required" >&2
   usage >&2
   exit 1
 fi
@@ -71,14 +71,17 @@ case "$PLATFORM" in
     BUNDLE_NAME="Frame-IDE-linux64"
     ARTIFACT_EXT="tar.gz"
     ;;
-  darwin-arm64)
-    GULP_TASK="vscode-darwin-arm64"
-    IDE_SRC="$ROOT/VSCode-darwin-arm64"
-    BUNDLE_NAME="Frame-macOS-arm64"
-    ARTIFACT_EXT="dmg"
+  darwin-arm64|darwin*|macos*|macOS*)
+    cat >&2 <<'EOF'
+error: macOS DMG packaging is disabled for now (Gatekeeper / unsigned builds).
+
+Use Windows or Linux release assets, or run from source:
+  ./scripts/launch-frame.sh
+EOF
+    exit 1
     ;;
   *)
-    echo "error: unsupported platform '$PLATFORM' (use win64, linux64, or darwin-arm64)" >&2
+    echo "error: unsupported platform '$PLATFORM' (use win64 or linux64)" >&2
     exit 1
     ;;
 esac
@@ -174,45 +177,6 @@ case "$PLATFORM" in
       cd "$ROOT/dist"
       tar -czf "${BUNDLE_NAME}.tar.gz" "$BUNDLE_NAME"
     )
-    sha_file "$ARTIFACT"
-    ;;
-  darwin-arm64)
-    # Prefer .app inside the packaged folder; fall back to the folder itself.
-    APP_SRC=""
-    if [[ -d "$IDE_SRC/Frame.app" ]]; then
-      APP_SRC="$IDE_SRC/Frame.app"
-    else
-      # Some builds place Frame.app as the only child
-      for cand in "$IDE_SRC"/*.app; do
-        if [[ -d "$cand" ]]; then
-          APP_SRC="$cand"
-          break
-        fi
-      done
-    fi
-    if [[ -z "$APP_SRC" ]]; then
-      echo "error: no Frame.app found under $IDE_SRC" >&2
-      ls -la "$IDE_SRC" >&2 || true
-      exit 1
-    fi
-
-    STAGE="$ROOT/dist/.dmg-stage-$BUNDLE_NAME"
-    rm -rf "$STAGE"
-    mkdir -p "$STAGE"
-    cp -R "$APP_SRC" "$STAGE/Frame.app"
-    write_readme "$STAGE/README.txt"
-    ln -sf /Applications "$STAGE/Applications"
-
-    ARTIFACT="$ROOT/dist/${BUNDLE_NAME}.dmg"
-    rm -f "$ARTIFACT" "${ARTIFACT}.sha256"
-    # Unsigned beta DMG - Gatekeeper will warn until notarized.
-    hdiutil create \
-      -volname "Frame" \
-      -srcfolder "$STAGE" \
-      -ov \
-      -format UDZO \
-      "$ARTIFACT"
-    rm -rf "$STAGE"
     sha_file "$ARTIFACT"
     ;;
 esac

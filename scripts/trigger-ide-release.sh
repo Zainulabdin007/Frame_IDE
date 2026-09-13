@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PLATFORM="all"
+PLATFORM="win-linux"
 TAG=""
 PRERELEASE="true"
 
