@@ -55,13 +55,13 @@ jobs:
           set -euo pipefail
           case "${{ inputs.platform }}" in
             win64)
-              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"}]}'
+              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"}]}'
               ;;
             linux64)
               matrix='{"include":[{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
               ;;
             both)
-              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
+              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
               ;;
             *)
               echo "Unknown platform input" >&2
