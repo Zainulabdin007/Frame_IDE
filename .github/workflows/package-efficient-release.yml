@@ -78,6 +78,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.select-matrix.outputs.matrix) }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,9 +116,6 @@ jobs:
       - name: Install npm dependencies
         working-directory: vscode
         shell: bash
-        env:
-          # @vscode/ripgrep postinstall hits api.github.com; unauthenticated CI gets 403 rate limits
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           npm ci

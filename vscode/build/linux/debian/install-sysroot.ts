@@ -22,7 +22,7 @@ const ghApiHeaders: Record<string, string> = {
 };
 
 if (process.env.GITHUB_TOKEN) {
-	ghApiHeaders.Authorization = 'Basic ' + Buffer.from(process.env.GITHUB_TOKEN).toString('base64');
+	ghApiHeaders.Authorization = 'Bearer ' + process.env.GITHUB_TOKEN;
 }
 
 const ghDownloadHeaders = {
