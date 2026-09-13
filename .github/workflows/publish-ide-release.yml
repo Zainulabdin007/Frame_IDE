@@ -22,6 +22,7 @@ on:
         type: choice
         options:
           - all
+          - win-linux
           - win64
           - linux64
           - darwin-arm64
@@ -64,6 +65,9 @@ jobs:
               ;;
             darwin-arm64)
               matrix='{"include":[{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
+              ;;
+            win-linux)
+              matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
               ;;
             all)
               matrix='{"include":[{"platform":"win64","runner":"windows-2022","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"},{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'

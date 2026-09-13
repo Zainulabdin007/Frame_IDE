@@ -4,6 +4,7 @@
 # Usage:
 #   ./scripts/trigger-ide-release.sh --tag v0.1.0
 #   ./scripts/trigger-ide-release.sh --tag v0.1.0 --platform win64
+#   ./scripts/trigger-ide-release.sh --tag v0.1.0 --platform win-linux
 #   ./scripts/trigger-ide-release.sh --tag v0.1.0-beta.1 --platform all --prerelease false
 #
 # Requires: gh auth login

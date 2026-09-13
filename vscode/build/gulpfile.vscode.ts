@@ -590,7 +590,14 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 function hasAuthenticodeSignature(filePath: string): Promise<boolean> {
 	return new Promise((resolve, reject) => {
 		const proc = cp.spawn('signtool.exe', ['verify', '/pa', filePath]);
-		proc.on('error', reject);
+		proc.on('error', (err: NodeJS.ErrnoException) => {
+			// Unsigned OSS/beta CI images often lack the Windows SDK signtool.
+			if (err.code === 'ENOENT') {
+				resolve(false);
+				return;
+			}
+			reject(err);
+		});
 		proc.on('exit', code => resolve(code === 0));
 	});
 }
@@ -623,6 +630,17 @@ function patchWin32DependenciesTask(destinationFolderName: string) {
 	const cwd = path.join(path.dirname(root), destinationFolderName);
 
 	return async () => {
+		// Beta/OSS packaging: skip when Windows SDK signing tools aren't installed.
+		const signtoolMissing = await new Promise<boolean>(resolve => {
+			const proc = cp.spawn('signtool.exe', []);
+			proc.on('error', (err: NodeJS.ErrnoException) => resolve(err.code === 'ENOENT'));
+			proc.on('exit', () => resolve(false));
+		});
+		if (signtoolMissing) {
+			console.warn('[patchWin32DependenciesTask] Skipping — signtool.exe not found (unsigned beta build).');
+			return;
+		}
+
 		const versionedResourcesFolder = util.getVersionedResourcesFolder('win32', commit!);
 		const deps = (await Promise.all([
 			glob('**/*.node', { cwd, ignore: 'extensions/node_modules/@parcel/watcher/**' }),
