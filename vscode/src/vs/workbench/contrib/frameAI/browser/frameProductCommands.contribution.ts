@@ -2,7 +2,6 @@
  *  Copyright (c) Frame. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize2 } from '../../../../nls.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
@@ -20,7 +19,8 @@ function registerFrameProductCommand(id: string, title: string, run?: (accessor:
 		constructor() {
 			super({
 				id,
-				title: localize2(id, title),
+				// NLS requires literal keys — use a plain ILocalizedString for dynamic titles.
+				title: { value: title, original: title },
 				category: Categories.Developer,
 				f1: false,
 			});
