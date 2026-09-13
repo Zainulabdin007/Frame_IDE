@@ -87,7 +87,7 @@ export PATH="/opt/homebrew/opt/node@24/bin:${PATH:-}"
 unset ELECTRON_RUN_AS_NODE
 
 if [[ "$DO_BUILD" -eq 1 ]]; then
-  echo "==> Building IDE ($GULP_TASK)…"
+  echo "==> Building IDE (${GULP_TASK})..."
   (
     cd "$ROOT/vscode"
     npm run gulp "$GULP_TASK"
@@ -126,7 +126,7 @@ Why split?
 Install
   1. Unpack / open this package for your OS.
   2. Launch Frame.
-  3. Open the Frame sidebar → Models → install Efficient (4-bit).
+  3. Open the Frame sidebar -> Models -> install Efficient (4-bit).
 
 Releases: https://github.com/Zainulabdin007/Frame_IDE/releases/latest
 EOF
@@ -143,7 +143,7 @@ sha_file() {
   fi
 }
 
-echo "==> Assembling IDE-only $BUNDLE_NAME…"
+echo "==> Assembling IDE-only ${BUNDLE_NAME}..."
 
 case "$PLATFORM" in
   win64)
@@ -205,7 +205,7 @@ case "$PLATFORM" in
 
     ARTIFACT="$ROOT/dist/${BUNDLE_NAME}.dmg"
     rm -f "$ARTIFACT" "${ARTIFACT}.sha256"
-    # Unsigned beta DMG — Gatekeeper will warn until notarized.
+    # Unsigned beta DMG - Gatekeeper will warn until notarized.
     hdiutil create \
       -volname "Frame" \
       -srcfolder "$STAGE" \
@@ -218,7 +218,7 @@ case "$PLATFORM" in
 esac
 
 echo
-echo "Done (IDE only — no GGUF)."
+echo "Done (IDE only - no GGUF)."
 echo "  Artifact: $ARTIFACT"
 [[ -f "${ARTIFACT}.sha256" ]] && echo "  SHA256:   ${ARTIFACT}.sha256"
 echo
