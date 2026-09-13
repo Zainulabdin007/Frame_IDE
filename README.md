@@ -14,7 +14,7 @@ No Copilot account. No cloud inference. No silent model downloads.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  7  DISTRIBUTION                                                │
-│      Win/Linux Efficient zip · GHA packaging · CDN model URL    │
+│      GitHub Releases IDE packs · Models sidebar GGUF · optional CDN zip │
 ├─────────────────────────────────────────────────────────────────┤
 │  6  TRAINING & PERSONALIZATION                                  │
 │      MLX QLoRA · fuse → Q4 GGUF · Approve → prefs LoRA schedule │
@@ -120,24 +120,31 @@ Docs: `tools/frame-lora-train/README.md`, `FRAME_PREFERENCE_LEARNING.md`, `FRAME
 
 ### Layer 7 — Distribution
 
+**Public download path:** [GitHub Releases](https://github.com/Zainulabdin007/Frame_IDE/releases/latest) (website Download CTAs point here).
+
+**First-time setup (IDE + base GGUF you download + LoRA we ship):** see [`docs/DOWNLOAD.md`](docs/DOWNLOAD.md) — written so people can paste it into ChatGPT.
+
 | Piece | Role |
 |-------|------|
-| `scripts/package-efficient-release.sh` | Bundle IDE + fused Q4 into one zip |
-| `.github/workflows/package-efficient-release.yml` | Build Win/Linux on GitHub Actions (no local Win/Linux box) |
-| `scripts/trigger-efficient-release.sh` | `gh workflow run` helper |
-| First launch | Auto-detects bundled `resources/frame-models/*.gguf` |
+| `scripts/package-ide-release.sh` | IDE-only Win zip / Linux tarball / macOS DMG (no GGUF) |
+| `.github/workflows/publish-ide-release.yml` | Build + publish IDE assets to a GitHub Release |
+| `scripts/trigger-ide-release.sh` | `gh workflow run` helper for IDE releases |
+| `scripts/package-efficient-release.sh` | Optional CDN bundle: IDE + fused Q4 (~5GB+) |
+| `.github/workflows/package-efficient-release.yml` | Build full Efficient zips for CDN hosting |
+| Models sidebar | Post-install Efficient GGUF install (GitHub cannot host the ~4GB model) |
 
-Host ~5GB+ zips on a CDN (GitHub Release file limit is 2GB).
+GitHub Release assets max out at **2GB/file**, so Releases ship **IDE only**. After install: open Frame → Models → install Efficient (4-bit). Host full IDE+model zips on a CDN if you need one-click offline packs.
 
 ```bash
-# Trigger CI (model must be reachable by HTTPS URL)
+# Publish IDE installers to GitHub Releases (recommended website funnel)
+./scripts/trigger-ide-release.sh --tag v0.1.0 --platform all
+gh run watch
+# → https://github.com/Zainulabdin007/Frame_IDE/releases/latest
+
+# Optional: full Efficient zip for CDN (not for GitHub Release assets)
 ./scripts/trigger-efficient-release.sh \
   --platform both \
   --model-url 'https://YOUR_CDN/frame-agent-v1-fused-q4_k_m.gguf'
-
-gh run watch
-gh run download --name Frame-Efficient-win64
-gh run download --name Frame-Efficient-linux64
 ```
 
 ---
@@ -159,7 +166,7 @@ Chat message
 ## Hard rules
 
 1. **Local-only** AI path — no cloud inference clients in `frameAI`
-2. **No silent weight downloads** — user path or release bundle only
+2. **No silent weight downloads** — user path, Models sidebar install, or explicit release/CDN bundle only
 3. **Process isolation** — weights outside the Electron renderer
 4. **HITL preferences** — never auto-activate style prefs
 5. **Workspace sandbox** — tool paths stay inside the folder
@@ -196,6 +203,7 @@ python tools/frame-lora-train/scripts/install_fused_base_model.py \
 | `resources/frame-models/` | 5/7 — release GGUF staging |
 | `scripts/` | 1/7 — launch + package |
 | `.github/workflows/` | 7 — CI release |
+| `docs/DOWNLOAD.md` | 7 — public install + model step 2 |
 | `FRAME_*.md` | Architecture docs (33) |
 
 ---

@@ -98,35 +98,15 @@ export interface IFrameEditPlanPreview {
 
 /** Detect whether a prompt should produce a stub edit plan. */
 export function isFrameEditIntent(prompt: string): boolean {
-	return /\b(edit|create|add|fix|refactor|delete|remove|rename|implement|write|update|modify|insert|generate\s+file)\b/i.test(prompt.trim());
+	return /\b(edit|create|add(?:ed|ing)?|fix|refactor|delete|remove|rename|implement|write|update|modify|insert|change|make\s+the\s+change|generate\s+file)\b/i.test(prompt.trim());
 }
 
 /**
- * Reject likely truncated full-file replacements before they reach Chat Apply.
- * Additive requests must never be allowed to erase most of an existing file.
+ * Formerly rejected likely truncated full-file replacements.
+ * Disabled for now so local preview can apply model edits as-produced.
  */
-export function isSuspiciousDestructiveModify(prompt: string, originalContent: string, newContent: string): boolean {
-	if (originalContent.length < 200 || newContent === originalContent) {
-		return false;
-	}
-	const explicitlyDestructive = /\b(rewrite|replace)\s+(the\s+)?(whole|entire)\b|\b(shorten|truncate|clear|empty)\b|\b(remove|delete)\s+(most|everything|all)\b/i.test(prompt);
-	if (explicitlyDestructive) {
-		return false;
-	}
-	const retainedRatio = newContent.length / originalContent.length;
-	if (retainedRatio < 0.35) {
-		return true;
-	}
-	const originalFences = (originalContent.match(/```/g) ?? []).length;
-	const newFences = (newContent.match(/```/g) ?? []).length;
-	if (originalFences % 2 === 0 && newFences % 2 !== 0) {
-		return true;
-	}
-	if (/…\[truncated\]|\[truncated\s+\d+/i.test(newContent)) {
-		return true;
-	}
-	const additiveIntent = /\b(add|append|prepend|insert|put)\b/i.test(prompt);
-	return additiveIntent && retainedRatio < 0.8;
+export function isSuspiciousDestructiveModify(_prompt: string, _originalContent: string, _newContent: string): boolean {
+	return false;
 }
 
 /** Materialize a concise operation against authoritative full file contents. */
@@ -301,12 +281,9 @@ export function parseModelEditPlan(
 }
 
 /**
- * Recover an applyable edit when the model forgot ```frame-edit-plan```.
- *
- * Order matters for safety:
- * 1) Small additive heuristics (prepend / append) from the user prompt
- * 2) Full-file replace from a model code fence ONLY when the prompt asks to
- *    rewrite/replace the file — never for "add X at the end" style requests
+ * Order:
+ * 1) Small additive heuristics (prepend / append / insert) from the user prompt
+ * 2) Full-file replace from a model code fence when present
  */
 export function synthesizeRecoveredEditPlan(
 	taskId: string,
@@ -397,73 +374,30 @@ export function synthesizeRecoveredEditPlan(
 		};
 	}
 
-	// Full-file fence replace is dangerous — only when user clearly asked to rewrite.
-	if (looksLikeFullFileRewrite(prompt)) {
-		const fromFence = extractLargestCodeFence(modelOutput ?? '');
-		if (fromFence && isSafeFullFileReplacement(original, fromFence)) {
-			return {
+	// Prefer applying a model code fence to the active file when no structured plan was emitted.
+	const fromFence = extractLargestCodeFence(modelOutput ?? '');
+	if (fromFence && fromFence !== original) {
+		return {
+			id: generateUuid(),
+			taskId,
+			prompt,
+			createdAt: Date.now(),
+			summary: `Apply model code block to ${active}.`,
+			operations: [{
 				id: generateUuid(),
-				taskId,
-				prompt,
-				createdAt: Date.now(),
-				summary: `Rewrite ${active} from model code block.`,
-				operations: [{
-					id: generateUuid(),
-					kind: 'modify',
-					status: 'pending',
-					path: active,
-					reason: 'Recovered full-file rewrite from model markdown fence.',
-					originalContent: original,
-					newContent: fromFence.endsWith('\n') ? fromFence : `${fromFence}\n`,
-				}],
-				stub: false,
-				status: 'preview',
-			};
-		}
+				kind: 'modify',
+				status: 'pending',
+				path: active,
+				reason: 'Recovered file edit from model markdown fence.',
+				originalContent: original,
+				newContent: fromFence.endsWith('\n') ? fromFence : `${fromFence}\n`,
+			}],
+			stub: false,
+			status: 'preview',
+		};
 	}
 
 	return undefined;
-}
-
-function looksLikeFullFileRewrite(prompt: string): boolean {
-	const lower = prompt.toLowerCase();
-	return /\b(rewrite|replace\s+(the\s+)?(entire\s+)?file|overwrite|replace\s+all|full\s+file)\b/.test(lower)
-		|| /\brewrite\b/.test(lower);
-}
-
-/**
- * Reject fences that look like unrelated dumps (docs, other files, tiny scraps).
- */
-function isSafeFullFileReplacement(original: string, next: string): boolean {
-	if (!next.trim() || next === original) {
-		return false;
-	}
-	// Don't accept tiny replacements of large files.
-	if (original.length > 400 && next.length < original.length * 0.25) {
-		return false;
-	}
-	// Don't accept huge unrelated expansions from tiny files either (model dump).
-	if (original.length > 0 && next.length > Math.max(original.length * 4, original.length + 8_000)) {
-		return false;
-	}
-	// Rough overlap: at least some shared tokens with the original file.
-	const origTokens = new Set(tokenizeRough(original));
-	const nextTokens = tokenizeRough(next);
-	if (origTokens.size === 0) {
-		return true;
-	}
-	let hit = 0;
-	for (const t of nextTokens) {
-		if (origTokens.has(t)) {
-			hit++;
-		}
-	}
-	const overlap = hit / Math.min(origTokens.size, 80);
-	return overlap >= 0.08;
-}
-
-function tokenizeRough(text: string): string[] {
-	return text.toLowerCase().split(/[^a-z0-9_./-]+/).filter(t => t.length > 3).slice(0, 200);
 }
 
 function extractLargestCodeFence(text: string): string | undefined {

@@ -57,4 +57,7 @@ echo "When finished, download zips:"
 echo "  gh run download --name Frame-Efficient-win64"
 echo "  gh run download --name Frame-Efficient-linux64"
 echo
-echo "Then host the .zip on your CDN and link your website Download button to it."
+echo "Then host the .zip on your CDN (too large for GitHub Release assets)."
+echo "Website Download CTAs should point at GitHub Releases IDE packs:"
+echo "  https://github.com/Zainulabdin007/Frame_IDE/releases/latest"
+echo "  ./scripts/trigger-ide-release.sh --tag v0.1.0"

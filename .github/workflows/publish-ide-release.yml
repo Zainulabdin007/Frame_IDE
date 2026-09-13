@@ -1,0 +1,232 @@
+# Build Frame IDE-only installers (no GGUF) and publish to GitHub Releases.
+# Assets stay under the 2GB Release file limit. Users install Efficient from
+# the Models sidebar after launch.
+#
+# Trigger:
+#   gh workflow run publish-ide-release.yml \
+#     -f platform=all \
+#     -f tag=v0.1.0
+#
+# Or:
+#   ./scripts/trigger-ide-release.sh --tag v0.1.0 --platform all
+
+name: Publish IDE Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which OS asset(s) to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - win64
+          - linux64
+          - darwin-arm64
+      tag:
+        description: Release tag (created or reused)
+        required: true
+        type: string
+      prerelease:
+        description: Mark release as prerelease
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-ide-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.tag }}
+  cancel-in-progress: true
+
+jobs:
+  select-matrix:
+    name: Select platforms
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - name: Build matrix JSON
+        id: set
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.platform }}" in
+            win64)
+              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"}]}'
+              ;;
+            linux64)
+              matrix='{"include":[{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"}]}'
+              ;;
+            darwin-arm64)
+              matrix='{"include":[{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
+              ;;
+            all)
+              matrix='{"include":[{"platform":"win64","runner":"windows-latest","gulp_task":"vscode-win32-x64"},{"platform":"linux64","runner":"ubuntu-latest","gulp_task":"vscode-linux-x64"},{"platform":"darwin-arm64","runner":"macos-14","gulp_task":"vscode-darwin-arm64"}]}'
+              ;;
+            *)
+              echo "Unknown platform input" >&2
+              exit 1
+              ;;
+          esac
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Package ${{ matrix.platform }}
+    needs: select-matrix
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h
+
+      - name: Install Linux build deps
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config \
+            libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev \
+            libgtk-3-0 libgbm1 \
+            zip
+
+      - name: Setup Node.js 24.18.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.0'
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: vscode
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci
+
+      - name: Build IDE (${{ matrix.gulp_task }})
+        working-directory: vscode
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          set -euo pipefail
+          npm run gulp ${{ matrix.gulp_task }}
+
+      - name: Assemble IDE-only release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/package-ide-release.sh
+          ./scripts/package-ide-release.sh --platform ${{ matrix.platform }}
+          ls -lh dist/
+
+      - name: Optional Windows user Setup.exe
+        if: matrix.platform == 'win64'
+        working-directory: vscode
+        shell: bash
+        continue-on-error: true
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          set -euo pipefail
+          npm run gulp vscode-win32-x64-user-setup || true
+          setup="$(find .build/win32-x64/user-setup -name '*.exe' 2>/dev/null | head -1 || true)"
+          if [[ -n "${setup:-}" && -f "$setup" ]]; then
+            cp "$setup" ../dist/Frame-IDE-win64-Setup.exe
+            (cd ../dist && sha256sum Frame-IDE-win64-Setup.exe > Frame-IDE-win64-Setup.exe.sha256) || \
+              (cd ../dist && shasum -a 256 Frame-IDE-win64-Setup.exe > Frame-IDE-win64-Setup.exe.sha256) || true
+            ls -lh ../dist/Frame-IDE-win64-Setup.exe*
+          else
+            echo "Setup.exe not produced — zip-only release for Windows is fine."
+          fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frame-IDE-${{ matrix.platform }}
+          path: |
+            dist/Frame-IDE-*.zip
+            dist/Frame-IDE-*.zip.sha256
+            dist/Frame-IDE-*.tar.gz
+            dist/Frame-IDE-*.tar.gz.sha256
+            dist/Frame-IDE-*-Setup.exe
+            dist/Frame-IDE-*-Setup.exe.sha256
+            dist/Frame-macOS-*.dmg
+            dist/Frame-macOS-*.dmg.sha256
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  publish:
+    name: Publish GitHub Release
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: Frame-IDE-*
+          merge-multiple: true
+
+      - name: List assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          find release-assets -type f | sort
+          ls -lh release-assets || true
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: Frame ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          body: |
+            ## Frame IDE (${{ inputs.tag }})
+
+            ### First-time setup
+
+            1. Download the **IDE** asset for your OS (table below).
+            2. Download our **Frame agent LoRA** from this release when attached (`frame-agent-v1-adapters.gguf`).
+            3. Download a **Qwen2.5-Coder-7B-Instruct Q4_K_M** GGUF yourself (Hugging Face — not on GitHub; files are too large).
+            4. Point Frame at the base GGUF and install the LoRA (copy-paste guide): **[docs/DOWNLOAD.md](https://github.com/Zainulabdin007/Frame_IDE/blob/main/docs/DOWNLOAD.md)**
+
+            Stuck? Paste that doc into ChatGPT and ask it to walk you through your OS.
+
+            GitHub Release assets are capped at 2GB/file, so the full fused Efficient GGUF is **not** bundled here.
+
+            | OS | Asset |
+            |----|--------|
+            | Windows x64 | `Frame-IDE-win64.zip` (and `Frame-IDE-win64-Setup.exe` when the Setup build succeeds) |
+            | Linux x64 | `Frame-IDE-linux64.tar.gz` |
+            | macOS Apple Silicon | `Frame-macOS-arm64.dmg` (unsigned beta — right-click → Open the first time) |
+          files: |
+            release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

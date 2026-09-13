@@ -119,7 +119,7 @@ export class FrameAIViewPane extends ViewPane {
 
 		// Primary (expanded): Models → Preview Changes → Tool Activity
 		this.modelBodyEl = this.renderSection('models', localize('frameAI.modelsTitle', "Models"), localize('frameAI.modelsControlHint', "Shows the model you have installed versus the recommended edition for this machine."), true);
-		this.editsBodyEl = this.renderSection('edits', localize('frameAI.editsTitle', "Preview Changes"), localize('frameAI.editsHint', "Safe non-stub edit plans apply automatically. Use Undo if needed."), true);
+		this.editsBodyEl = this.renderSection('edits', localize('frameAI.editsTitle', "Preview Changes"), localize('frameAI.editsHint', "Edit plans with operations apply automatically. Use Undo if needed."), true);
 		this.toolsBodyEl = this.renderSection('tools', localize('frameAI.toolsTitle', "Tool Activity"), localize('frameAI.toolsHint', "Current and recent local tool calls."), true);
 
 		// Secondary (collapsed): everything else for chat-first users

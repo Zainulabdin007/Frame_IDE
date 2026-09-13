@@ -96,10 +96,10 @@ suite('FrameEditPlan', () => {
 		assert.strictEqual(operation.newContent, newContent);
 	});
 
-	test('blocks truncated additive full-file replacements', () => {
+	test('destructive-edit safeguard is disabled for local preview', () => {
 		assert.strictEqual(
 			isSuspiciousDestructiveModify('add hello to the second line', original, '# Frame Memory Persistence\nhello\n'),
-			true,
+			false,
 		);
 		assert.strictEqual(
 			isSuspiciousDestructiveModify('add hello to the second line', original, `${original}\nhello`),

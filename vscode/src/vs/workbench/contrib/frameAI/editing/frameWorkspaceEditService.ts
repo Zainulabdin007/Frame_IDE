@@ -9,10 +9,12 @@ import { joinPath, dirname } from '../../../../base/common/resources.js';
 import { URI } from '../../../../base/common/uri.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
 import { ResourceEdit, ResourceFileEdit } from '../../../../editor/browser/services/bulkEditService.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
 import {
 	buildStubEditPlan,
 	FRAME_STUB_PLAN_MESSAGE,
@@ -22,7 +24,6 @@ import {
 	IFrameEditPlan,
 	IFrameEditPlanPreview,
 	isFrameEditIntent,
-	isSuspiciousDestructiveModify,
 	materializeSourceEdit,
 	parseModelEditPlan,
 	previewEditPlan,
@@ -139,6 +140,8 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@ILogService private readonly logService: ILogService,
+		@ITextModelService private readonly textModelService: ITextModelService,
+		@ITextFileService private readonly textFileService: ITextFileService,
 	) {
 		super();
 		this.logService.info('[FrameEdit] Workspace edit service ready (model plan parse + stub fallback)');
@@ -217,26 +220,10 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 		const recovered = parsed ?? synthesizeRecoveredEditPlan(taskId, prompt, context, modelOutput, {
 			readFileContent: (rel) => this.readRelativeSyncCache(rel),
 		});
-		let plan = recovered ?? buildStubEditPlan(taskId, prompt, context, {
+		const plan = recovered ?? buildStubEditPlan(taskId, prompt, context, {
 			readFileContent: (rel) => this.readRelativeSyncCache(rel),
 		});
-		let next = await this.hydrateOriginalContents(plan);
-		const destructive = next.operations.some(op =>
-			op.kind === 'modify'
-			&& isSuspiciousDestructiveModify(prompt, op.originalContent ?? '', op.newContent)
-		);
-		if (destructive) {
-			// A valid JSON plan can still be truncated by the model's token limit.
-			// Prefer a deterministic additive recovery; otherwise suppress Apply.
-			const safeRecovery = synthesizeRecoveredEditPlan(taskId, prompt, context, modelOutput, {
-				readFileContent: (rel) => this.readRelativeSyncCache(rel),
-			});
-			plan = safeRecovery ?? buildStubEditPlan(taskId, prompt, context, {
-				readFileContent: (rel) => this.readRelativeSyncCache(rel),
-			});
-			next = await this.hydrateOriginalContents(plan);
-			this.logService.warn('[FrameEdit] Rejected destructive/truncated model replacement; using safe recovery or stub.');
-		}
+		const next = await this.hydrateOriginalContents(plan);
 		this._pending = next;
 		this._onDidChangePlans.fire();
 		this.logService.info(
@@ -283,9 +270,6 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 						issues.push(`Unsafe path in ${op.kind}: ${op.path} (${resolved.error})`);
 					}
 				}
-			}
-			if (op.kind === 'modify' && isSuspiciousDestructiveModify(plan.prompt, op.originalContent ?? '', op.newContent)) {
-				issues.push(`Suspicious destructive replacement blocked: ${op.path}`);
 			}
 			if (op.kind === 'rename') {
 				if (!folder) {
@@ -420,8 +404,7 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 					}
 					this._readCache.delete(entry.path);
 				} else if (entry.content !== undefined) {
-					await this.ensureParent(uri);
-					await this.fileService.writeFile(uri, VSBuffer.fromString(entry.content));
+					await this.writeText(uri, entry.content);
 					this.cacheRead(entry.path, entry.content);
 				}
 			}
@@ -510,15 +493,6 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 					message: `File changed after the edit was proposed; regenerate the plan: ${op.path}`,
 				};
 			}
-			if (isSuspiciousDestructiveModify(plan.prompt, current, op.newContent)) {
-				return {
-					ok: false,
-					plan,
-					appliedOperationIds: [],
-					failedOperationIds: [op.id],
-					message: `Unsafe destructive replacement blocked: ${op.path}`,
-				};
-			}
 		}
 		const snapshotEntries: IRollbackSnapshot['entries'][number][] = [];
 
@@ -585,6 +559,34 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 		};
 	}
 
+	/**
+	 * Write text so an already-open editor buffer updates too.
+	 * Raw {@link IFileService.writeFile} updates disk only — dirty/open tabs keep
+	 * showing stale contents, which made chat claim "applied" while the user saw no change.
+	 */
+	private async writeText(uri: URI, content: string): Promise<void> {
+		await this.ensureParent(uri);
+		try {
+			const ref = await this.textModelService.createModelReference(uri);
+			try {
+				const model = ref.object.textEditorModel;
+				const full = model.getFullModelRange();
+				model.pushStackElement();
+				model.pushEditOperations(null, [{ range: full, text: content }], () => null);
+				model.pushStackElement();
+			} finally {
+				ref.dispose();
+			}
+			await this.textFileService.save(uri);
+			return;
+		} catch (err) {
+			this.logService.warn(
+				`[FrameEdit] Text-model write failed for ${uri.toString()}, falling back to fileService: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
+		await this.fileService.writeFile(uri, VSBuffer.fromString(content));
+	}
+
 	private async applyOne(folder: URI, op: IFrameEditOperation): Promise<void> {
 		switch (op.kind) {
 			case 'create': {
@@ -592,15 +594,13 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 				if (await this.fileService.exists(uri)) {
 					throw new Error(`Refusing to create — file already exists: ${op.path}. Use modify instead.`);
 				}
-				await this.ensureParent(uri);
-				await this.fileService.writeFile(uri, VSBuffer.fromString(op.content));
+				await this.writeText(uri, op.content);
 				this.cacheRead(op.path, op.content);
 				return;
 			}
 			case 'modify': {
 				const uri = joinPath(folder, op.path);
-				await this.ensureParent(uri);
-				await this.fileService.writeFile(uri, VSBuffer.fromString(op.newContent));
+				await this.writeText(uri, op.newContent);
 				this.cacheRead(op.path, op.newContent);
 				return;
 			}
@@ -653,6 +653,14 @@ export class FrameWorkspaceEditService extends Disposable implements IFrameWorks
 		}
 		const uri = joinPath(folder, rel);
 		try {
+			// Prefer the open editor buffer — that is what the user sees and what
+			// conflict checks / sourceEdit materialization must match.
+			const open = this.textFileService.files.get(uri);
+			if (open?.isResolved()) {
+				const fromEditor = open.textEditorModel.getValue();
+				this.cacheRead(rel, fromEditor);
+				return fromEditor;
+			}
 			if (!(await this.fileService.exists(uri))) {
 				this._readCache.delete(rel);
 				return undefined;

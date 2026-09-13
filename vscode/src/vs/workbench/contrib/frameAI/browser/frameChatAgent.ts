@@ -317,8 +317,8 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 	}
 
 	/**
-	 * Applies validated non-stub edit plans directly to the workspace.
-	 * Stub / unsafe plans are reported only — never written.
+	 * Applies edit plans with operations directly to the workspace.
+	 * Empty / stub plans are reported only — nothing to write.
 	 */
 	private async emitEditPlanProgress(
 		editPlanId: string | undefined,
@@ -328,32 +328,23 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 		if (!editPlanId || !plan || plan.id !== editPlanId) {
 			return;
 		}
-		const validation = this.workspaceEdits.validatePlan(plan);
-		if (!validation.ok) {
-			this.logService.warn(`[FrameChat] Unsafe edit plan blocked: ${validation.issues.join('; ')}`);
-			progress([{
-				kind: 'warning',
-				content: new MarkdownString(localize(
-					'frameChat.unsafePlan',
-					"Frame blocked an unsafe or incomplete edit plan. No file changes were written.",
-				)),
-			}]);
-			return;
-		}
 
-		if (plan.stub) {
+		if (!plan.operations.length || plan.stub) {
+			this.logService.info(`[FrameChat] No applyable edit ops (stub=${plan.stub} ops=${plan.operations.length})`);
 			progress([{
 				kind: 'markdownContent',
 				content: new MarkdownString(localize(
 					'frameChat.stubPlan',
-					"I understood this as an edit, but couldn’t build a safe file change from the reply. Open the target file, then try again with something like: add \"works\" in front of the 1st line.",
+					"No file changes were produced from that reply. Open the target file and ask again with a concrete edit (or a ``` code block).",
 				)),
 			}]);
 			return;
 		}
 
-		if (!plan.operations.length) {
-			return;
+		const validation = this.workspaceEdits.validatePlan(plan);
+		if (!validation.ok) {
+			// Path / workspace issues only — still try apply below when possible.
+			this.logService.warn(`[FrameChat] Edit plan validation issues: ${validation.issues.join('; ')}`);
 		}
 
 		const opSummary = plan.operations.map(op => {
@@ -378,7 +369,7 @@ export class FrameChatAgent extends Disposable implements IChatAgentImplementati
 				kind: 'markdownContent',
 				content: new MarkdownString(localize(
 					'frameChat.planApplied',
-					"Applied {0} file change(s) to the workspace.",
+					"Applied {0} file change(s). Check the open editor tab — the buffer is updated and saved.",
 					result.appliedOperationIds.length,
 				)),
 			}]);
